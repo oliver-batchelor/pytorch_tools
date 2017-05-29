@@ -31,7 +31,7 @@ def dice(probs,target):
     assert probs.size(2) == target.size(2), "targets and labels must have matching number of elements"
 
     num = probs.mul(target).sum(2)
-    den1 = probs.mul(probs).sum(2)
+    den1 = probs.mul(probs).sum(2) + 1e-6
     den2 = target.mul(target).sum(2)
 
     dice = 2*(num/(den1+den2))

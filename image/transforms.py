@@ -50,10 +50,34 @@ def translation(tx, ty):
 
 def adjust_colors(image, gamma_dev = 0.2):
     gamma = random.uniform(1-gamma_dev, 1+gamma_dev)
-
-
-
     return cv.adjust_gamma(image, gamma)
+
+
+def compose(fs):
+    def composed(image, targets):
+        for f in fs:
+            image, targets = f(image, targets)
+        return image, targets
+    return composed
+
+
+
+def normalize(mean=[0.406, 0.456, 0.485], std=[0.225, 0.224, 0.229]):
+    def f(image, target):
+        image = image.float().div_(255)
+        for i in range(0, 2):
+            image.select(2, i).sub_(mean[i]).div_(std[i])
+        return image, target.long()
+    return f
+
+
+def scale_to(dest_size):
+    def f(image, target):
+        image = cv.warpAffine(image, t, dest_size, flags = cv.INTER_CUBIC, borderMode = cv.BORDER_CONSTANT)
+        target = cv.warpAffine(target, t, dest_size, flags = cv.INTER_NEAREST, borderMode = cv.BORDER_CONSTANT)
+        return image, target
+    return f
+
 
 
 def random_crop(min_crop, dest_size, max_scale = 1, border = 20, squash_dev = 0.1, rotation_dev = 5, gamma_dev = 0.1):
@@ -74,12 +98,11 @@ def random_crop(min_crop, dest_size, max_scale = 1, border = 20, squash_dev = 0.
         s = scaling(flip / sx, 1 / sy)
         t = fromCentre.mm(s).mm(r).mm(toCentre)
 
-        image_out = cv.warpAffine(image, t, dest_size, flags = cv.INTER_CUBIC, borderMode = cv.BORDER_CONSTANT)
-        labels_out = cv.warpAffine(target, t, dest_size, flags = cv.INTER_NEAREST, borderMode = cv.BORDER_CONSTANT)
+        image = cv.warpAffine(image, t, dest_size, flags = cv.INTER_CUBIC, borderMode = cv.BORDER_CONSTANT)
+        target = cv.warpAffine(target, t, dest_size, flags = cv.INTER_NEAREST, borderMode = cv.BORDER_CONSTANT)
 
-        image_out.select(2, 0).copy_(adjust_colors(image_out.select(2, 0), gamma_dev))
-        image_out.select(2, 1).copy_(adjust_colors(image_out.select(2, 1), gamma_dev))
-        image_out.select(2, 2).copy_(adjust_colors(image_out.select(2, 2), gamma_dev))
+        for d in range(0, 2):
+            image.select(2, d).copy_(adjust_colors(image.select(2, d), gamma_dev))
 
-        return image_out, labels_out.long()
+        return image, target.long()
     return crop
