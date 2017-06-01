@@ -3,8 +3,11 @@ import torch
 import random
 import math
 
-from tools import tensor
+from tools import tensor, Struct
 import tools.image.cv as cv
+
+from tools.model.loss import count_elements_sparse
+
 
 def random_check(lower, upper):
     if (lower >= upper):
@@ -48,9 +51,19 @@ def translation(tx, ty):
       [0, 0, 1]])
 
 
-def adjust_colors(image, gamma_dev = 0.2):
+def adjust_colors(gamma_dev = 0.1):
+    def f(image, targets):
+        for d in range(0, 2):
+            image.select(2, d).copy_(adjust_channel(image.select(2, d), gamma_dev))
+
+        return image, targets
+    return f
+
+
+def adjust_channel(image, gamma_dev = 0.1):
     gamma = random.uniform(1-gamma_dev, 1+gamma_dev)
     return cv.adjust_gamma(image, gamma)
+
 
 
 def compose(fs):
@@ -61,8 +74,12 @@ def compose(fs):
     return composed
 
 
+def identity(image, target):
+    return image, target
 
-def normalize(mean=[0.406, 0.456, 0.485], std=[0.225, 0.224, 0.229]):
+default_statistics = Struct(mean=[0.406, 0.456, 0.485], std=[0.225, 0.224, 0.229])
+
+def normalize(mean=default_statistics.mean, std=default_statistics.mean):
     def f(image, target):
         image = image.float().div_(255)
         for i in range(0, 2):
@@ -79,9 +96,31 @@ def scale_to(dest_size):
     return f
 
 
+def size_tensor(t):
+    return torch.LongTensor(list(t.size()))
 
-def random_crop(min_crop, dest_size, max_scale = 1, border = 20, squash_dev = 0.1, rotation_dev = 5, gamma_dev = 0.1):
+
+
+def centre_on(dest_size, background=(0, 0, 0)):
+    assert(len(background) == 3)
+    assert(len(dest_size) == 2)
+
+    def f(image, target):
+        centre = size_tensor(image).float() * 0.5
+        toCentre = translation(-centre[0], -centre[1])
+        fromCentre = translation(dest_size[0] * 0.5, dest_size[1] * 0.5)
+        t = fromCentre.mm(toCentre)
+
+        image = cv.warpAffine(image, t, dest_size, flags = cv.INTER_CUBIC, borderMode = cv.BORDER_CONSTANT)
+        target = cv.warpAffine(target, t, dest_size, flags = cv.INTER_NEAREST, borderMode = cv.BORDER_CONSTANT)
+
+        return image, target.long()
+
+    return f
+
+def random_crop(min_crop, dest_size, max_scale = 1, border = 0, squash_dev = 0.0, rotation_dev = 0, gamma_dev = 0.0):
     def crop(image, target):
+
 
         base_scale = random.uniform(1, min(max_scale, image.size(1) / dest_size[0], image.size(0) / dest_size[1]))
         sx, sy = base_scale, base_scale * random.uniform(1-squash_dev, 1+squash_dev)
@@ -98,11 +137,12 @@ def random_crop(min_crop, dest_size, max_scale = 1, border = 20, squash_dev = 0.
         s = scaling(flip / sx, 1 / sy)
         t = fromCentre.mm(s).mm(r).mm(toCentre)
 
-        image = cv.warpAffine(image, t, dest_size, flags = cv.INTER_CUBIC, borderMode = cv.BORDER_CONSTANT)
+        border_fill = [255 * x for x in default_statistics.mean]
+
+        image = cv.warpAffine(image, t, dest_size, flags = cv.INTER_CUBIC, borderMode = cv.BORDER_CONSTANT, borderValue = border_fill)
         target = cv.warpAffine(target, t, dest_size, flags = cv.INTER_NEAREST, borderMode = cv.BORDER_CONSTANT)
 
-        for d in range(0, 2):
-            image.select(2, d).copy_(adjust_colors(image.select(2, d), gamma_dev))
+
 
         return image, target.long()
     return crop

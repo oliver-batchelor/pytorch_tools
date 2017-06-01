@@ -9,6 +9,9 @@ def split(t, dim = 0):
 def tile_batch(t, cols=int(6)):
     assert(t.dim() == 4)
 
+    if(t.size(0)) == 1:
+        return t[0]
+
     h = t.size(1)
     w = t.size(2)
 

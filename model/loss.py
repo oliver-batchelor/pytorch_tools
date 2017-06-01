@@ -58,3 +58,13 @@ def count_elements(indices, num_entries  = None):
 
     ones = torch.LongTensor([1]).expand(indices.size(0))
     return c.index_add_(0, indices, ones)
+
+def count_elements_sparse(indices, num_entries  = None):
+    elems = count_elements(indices, num_entries)
+    inds = torch.nonzero(elems).squeeze(1)
+
+    d = {}
+
+    for i in inds:
+        d[i] = elems[i]
+    return d

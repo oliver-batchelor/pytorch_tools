@@ -6,24 +6,51 @@ import math
 
 from tools import tensor
 import tools.image.cv as cv
+import itertools
 
+
+# def make_color_map(n):
+#     colors = torch.ByteTensor(n, 3).fill_(0)
+#
+#     for i in range(1, n):
+#         h = i / n
+#         s = (2 + (i // 2 % 2)) / 3
+#         v = (2 + (i % 2)) / 3
+#
+#         rgb = torch.FloatTensor (colorsys.hsv_to_rgb(h, s, v))
+#         colors[i] = (rgb * 255).byte()
+#
+#     d = int(math.sqrt(n))
+#     p = torch.arange(0, n).long().view(d, -1).t().contiguous().view(n)
+#     return colors.index(p)
+#
+#
+
+def combinations(total, components):
+    cs = []
+    for i in range(0, components):
+        step = math.ceil(pow(total, 1/(components - i)))
+        cs.append(step)
+        total /= step
+
+    return cs
+
+def make_divisions(divs, total):
+    if divs == 1:
+        return [total]
+    else:
+        return [math.floor((total / (divs - 1)) * i) for i in range(0, divs)]
+
+def take(n, iterable):
+    return list(itertools.islice(iterable, n))
 
 def make_color_map(n):
-    colors = torch.ByteTensor(n, 3).fill_(0)
+    colors = list(itertools.product(*[make_divisions(d, n) for d in combinations(n, 3)]))
+    random.Random(0).shuffle(colors)
+    return torch.ByteTensor(take(n, colors))
 
-    for i in range(1, n):
-        h = i / n
-        s = (2 + (i // 2 % 2)) / 3
-        v = (2 + (i % 2)) / 3
 
-        rgb = torch.FloatTensor (colorsys.hsv_to_rgb(h, s, v))
-        colors[i] = (rgb * 255).byte()
-
-    d = int(math.sqrt(n))
-    p = torch.arange(0, n).long().view(d, -1).t().contiguous().view(n)
-    return colors.index(p)
-
-default_map = make_color_map(255)
+default_map = make_color_map(256)
 
 def colorize(image, color_map):
     assert(image.dim() == 3 and image.size(2) == 1)

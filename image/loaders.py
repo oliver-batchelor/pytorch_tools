@@ -1,6 +1,9 @@
 import torch
 import tools.image.cv as cv
 
+from tools.model.loss import count_elements_sparse
+
+
 import os
 
 from torch.multiprocessing import Manager
@@ -21,10 +24,11 @@ def load_cached(f):
 
     return load
 
-def load_target_channel(channel = 0):
-    def load(path):
-        return cv.imread(path).select(2, 0)
-    return load
+def load_labels(path):
+    image = cv.imread(path).long()
+    if image.size(2) == 3:
+        image = image.narrow(2, 0, 1)
+    return image
 
 def load_rgb(path):
     return cv.imread(path)

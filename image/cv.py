@@ -11,6 +11,13 @@ def imread(path):
         image = image.view(*image.size(), 1)
     return image
 
+def imread_gray(path):
+    image = torch.from_numpy (cv2.imread(path, cv2.IMREAD_GRAYSCALE))
+    if(image.dim() == 2):
+        image = image.view(*image.size(), 1)
+    return image
+
+
 def imencode(extension, image):
     assert(image.dim() == 3 and image.size(2) <= 4)
     return cv2.imencode(extension, image.numpy())
@@ -67,5 +74,8 @@ INTER_NEAREST = cv2.INTER_NEAREST
 BORDER_REPLICATE = cv2.BORDER_REPLICATE
 BORDER_CONSTANT = cv2.BORDER_CONSTANT
 
+
+IMREAD_UNCHANGED = cv2.IMREAD_UNCHANGED
+CV_LOAD_IMAGE_GRAYSCALE = cv2.IMREAD_GRAYSCALE
 
 #BORDER_REPEAT = cv2.BORDER_REPEAT
