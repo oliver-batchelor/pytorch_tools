@@ -12,7 +12,7 @@ def add(parser):
     parser.add_argument('--seed', type=int, default=1, metavar='S',
                         help='random seed (default: 1)')
 
-    parser.add_argument('--batch_size', type=int, default=32, metavar='N',
+    parser.add_argument('--batch_size', type=int, default=16, metavar='N',
                         help='input batch size for training (default: 64)')
 
     parser.add_argument('--epoch_size', type=int, default=512, metavar='E',

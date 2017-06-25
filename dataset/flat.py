@@ -3,11 +3,19 @@ import os
 import os.path
 
 
-imageExtensions = ['jpg', 'jpeg', 'png', 'ppm', 'bmp']
+image_extensions = ['jpg', 'jpeg', 'png', 'ppm', 'bmp']
 
 def has_extension(extensions, filename):
     return any(filename.lower().endswith("." + extension) for extension in extensions)
 
+
+def file_extension(extensions):
+    def f(filename):
+        if has_extension(extensions, filename):
+            return filename
+    return f
+
+image_file = file_extension(image_extensions)
 
 def image_with_mask(extensions):
     def f(filename):
@@ -36,7 +44,7 @@ def find_files(dir, file_filter):
 
 class FlatFolder(data.Dataset):
 
-    def __init__(self, root, loader, file_filter = image_with_mask(imageExtensions), transform=None):
+    def __init__(self, root, loader, file_filter = image_file, transform=None):
 
         self.root = root
         self.transform = transform
@@ -47,18 +55,17 @@ class FlatFolder(data.Dataset):
 
 
     def rescan(self):
-        self.imgs = find_files(self.root, self.file_filter)
-        if len(self.imgs) == 0:
+        self.images = find_files(self.root, self.file_filter)
+        if len(self.images) == 0:
             raise(RuntimeError("Found 0 matching images in: " + self.root + "\n"))
 
-
-
     def __getitem__(self, index):
-        img, target = self.loader(*self.imgs[index])
-        if self.transform is not None:
-            img, target = self.transform(img, target)
 
-        return img, target
+        image = self.loader(self.images[index])
+        if self.transform is not None:
+            image = self.transform(image)
+
+        return image
 
     def __len__(self):
-        return len(self.imgs)
+        return len(self.images)

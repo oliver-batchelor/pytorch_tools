@@ -2,6 +2,29 @@
 import time
 import tensorflow as tf
 
+import os.path as path
+import os
+
+def make_experiment(log_path, name, dry_run=False, load=False):
+    output_path = os.path.join(log_path, name)
+
+    if not dry_run:
+        exists = path.exists(output_path) and len(os.listdir(output_path)) > 0
+
+        if exists and not load:
+            backup_name = enumerate_name(name, os.listdir(log_path))
+            backup_path = os.path.join(log_path, backup_name)
+
+            print("moving old experiment to: " + backup_path)
+            os.rename(output_path, backup_path)
+
+        if not path.isdir(output_path):
+            os.makedirs(output_path)
+
+        return output_path, Logger(output_path)
+    else:
+        return output_path, Null()
+
 
 def enumerate_name(base, names):
     i = 1

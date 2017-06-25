@@ -95,3 +95,11 @@ def overlay_batches(images, target, cols = 6, color_map = default_map):
     target = tensor.tile_batch(target, cols)
 
     return overlay_labels(images, target, color_map)
+
+
+def counts(target, class_names = None):
+    count = tensor.count_elements_sparse(target)
+    if(class_names):
+        return {class_names[k] if k < len(class_names) else "invalid" : n for k, n in count.items()}
+    else:
+        return count

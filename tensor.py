@@ -27,6 +27,46 @@ def tile_batch(t, cols=int(6)):
 
     return out
 
+
+def count_elements(indices, num_entries  = None):
+    indices = indices.long().view(-1)
+
+    num_entries = num_entries or (indices.max() + 1)
+    c = torch.LongTensor(num_entries).fill_(0)
+
+    ones = torch.LongTensor([1]).expand(indices.size(0))
+    return c.index_add_(0, indices, ones)
+
+
+def insert_size(s, dim, n):
+    size = list(s)
+    size.insert(dim, n)
+
+    return torch.Size(size)
+
+
+def one_hot(labels, classes, dim = 1):
+
+    expanded = labels.view(insert_size(labels.size(), dim, 1))
+    target = labels.new(insert_size(labels.size(), dim, classes))
+
+    return target.zero_().scatter_(dim, expanded, 1)
+
+def count_elements_sparse(indices, num_entries  = None):
+    elems = count_elements(indices, num_entries)
+    inds = torch.nonzero(elems).squeeze(1)
+
+    d = {}
+
+    for i in inds:
+        d[i] = elems[i]
+    return d
+
+def index(table, inds):
+    flat_indices = inds.view(-1).long()
+    flat_result = table.index(flat_indices)
+    return flat_result.view(inds.size())
+
 def show_batch_t(data, cols=int(6), scale=1):
     return show_batch(data.permute(0, 2, 3, 1), cols=cols, scale=scale)
 

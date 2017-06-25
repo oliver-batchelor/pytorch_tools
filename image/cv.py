@@ -18,6 +18,11 @@ def imread_gray(path):
     return image
 
 
+def write(image, extension, path):
+    result, buf = imencode(extension, image)
+    with open(path, 'wb') as file:
+        file.write(buf)
+
 def imencode(extension, image):
     assert(image.dim() == 3 and image.size(2) <= 4)
     return cv2.imencode(extension, image.numpy())
@@ -35,6 +40,7 @@ def display(t):
 
 def imshow(name, t):
     cv2.imshow(name, t.numpy())
+    waitKey(1)
 
 
 def adjust_gamma(image, gamma=1.0):
