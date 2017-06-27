@@ -14,7 +14,7 @@ class RepeatSampler(torch.utils.data.sampler.Sampler):
         self.dataset = dataset
 
     def __iter__(self):
-        return iter(torch.LongTensor(self.num_samples).random_(0, len(self.dataset) - 1))
+        return iter(torch.LongTensor(self.num_samples).random_(0, len(self.dataset)))
 
     def __len__(self):
         return self.num_samples

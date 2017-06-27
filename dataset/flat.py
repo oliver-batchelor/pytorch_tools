@@ -69,3 +69,22 @@ class FlatFolder(data.Dataset):
 
     def __len__(self):
         return len(self.images)
+
+
+class Preloaded(data.Dataset):
+
+    def __init__(self, root, data, transform=None):
+
+        self.root = root
+        self.transform = transform
+        self.data = data
+
+    def __getitem__(self, index):
+
+        image = self.data[index]
+        if self.transform is not None:
+            image = self.transform(image)
+        return image
+
+    def __len__(self):
+        return len(self.data)
