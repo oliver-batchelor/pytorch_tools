@@ -5,17 +5,21 @@ import torch
 
 import numpy as np
 
-def imread(path):
-    image = torch.from_numpy (cv2.imread(path, cv2.IMREAD_UNCHANGED))
+def imread(path, flag=cv2.IMREAD_UNCHANGED):
+    cv_image = cv2.imread(path, flag)
+    assert cv_image is not None, "imread: failed to load " + path
+    image = torch.from_numpy (cv_image)
     if(image.dim() == 2):
         image = image.view(*image.size(), 1)
     return image
 
+def imread_color(path):
+    image = imread(path, cv2.IMREAD_COLOR)
+    assert image.size(2) >= 3
+    return image.narrow(2, 0, 3)
+
 def imread_gray(path):
-    image = torch.from_numpy (cv2.imread(path, cv2.IMREAD_GRAYSCALE))
-    if(image.dim() == 2):
-        image = image.view(*image.size(), 1)
-    return image
+    return imread(path, cv2.IMREAD_GRAYSCALE)
 
 
 def write(image, extension, path):
@@ -82,6 +86,7 @@ BORDER_CONSTANT = cv2.BORDER_CONSTANT
 
 
 IMREAD_UNCHANGED = cv2.IMREAD_UNCHANGED
+IMREAD_COLOR = cv2.IMREAD_COLOR
 CV_LOAD_IMAGE_GRAYSCALE = cv2.IMREAD_GRAYSCALE
 
 #BORDER_REPEAT = cv2.BORDER_REPEAT

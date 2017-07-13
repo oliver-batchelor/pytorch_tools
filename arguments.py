@@ -5,8 +5,8 @@ def add(parser):
                         help='number of epochs to train (default: 100)')
     parser.add_argument('--lr', type=float, default=0.1, metavar='LR',
                         help='learning rate (default: 0.1)')
-    parser.add_argument('--momentum', type=float, default=0.5, metavar='M',
-                        help='SGD momentum (default: 0.5)')
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
+                        help='SGD momentum (default: 0.9)')
     parser.add_argument('--no_cuda', action='store_true', default=False,
                         help='enables CUDA training')
     parser.add_argument('--seed', type=int, default=1, metavar='S',
@@ -30,7 +30,10 @@ def add(parser):
     parser.add_argument('--show', action='store_true', default=False,
                         help='view training output')
 
-    parser.add_argument('--num-workers', type=int, default=1, metavar='W',
+    parser.add_argument('--visualize', action='store_true', default=False,
+                        help='visualize model')
+
+    parser.add_argument('--num-workers', type=int, default=2, metavar='W',
                         help='number of workers used to process dataset')
 
     parser.add_argument('--name', default='experiment',

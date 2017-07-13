@@ -15,6 +15,7 @@ def make_experiment(log_path, name, dry_run=False, load=False):
             backup_name = enumerate_name(name, os.listdir(log_path))
             backup_path = os.path.join(log_path, backup_name)
 
+        
             print("moving old experiment to: " + backup_path)
             os.rename(output_path, backup_path)
 

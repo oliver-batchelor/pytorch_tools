@@ -23,19 +23,30 @@ class Struct:
     def __str__(self):
         return self.__dict__.__str__()
 
+    def __floordiv__(self, divisor):
+        return Struct(**{k: v/divisor for (k, v) in self.items()})
+
+    def __truediv__(self, divisor):
+        return self.__floordiv__(divisor)
+
+
     def __add__(self, other):
         if other == 0:
             return self
 
         assert isinstance(other, Struct)
 
+        r = {}
+        for k in (self.keys() & other.keys()):
+            r[k] = self[k] + other[k]
 
+        for k in (self.keys() - other.keys()):
+            r[k] = self[k]
 
-        return Statistics(
-            self.error     + other.error,
-            self.size      + other.size,
-            self.confusion + other.confusion)
+        for k in (other.keys() - self.keys()):
+            r[k] = other[k]
 
+        return Struct(**r)
 
     def __radd__(self, other):
         return self.__add__(other)
