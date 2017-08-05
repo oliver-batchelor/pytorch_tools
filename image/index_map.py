@@ -46,11 +46,20 @@ def take(n, iterable):
 
 def make_color_map(n):
     colors = list(itertools.product(*[make_divisions(d, n) for d in combinations(n, 3)]))
-    random.Random(0).shuffle(colors)
+    colors = colors[1:]
+
+    random.Random(2).shuffle(colors)
+    colors.insert(0, (0, 0, 0))
+
     return torch.ByteTensor(take(n, colors))
 
 
 default_map = make_color_map(256)
+#
+# for i in range(0, 256):
+#     colors = default_map[i]
+#     print("{" + str(colors[2]) + ",\t" + str(colors[1]) + ",\t" + str(colors[1]) + "}, ")
+
 
 def colorize(image, color_map):
     assert(image.dim() == 3 and image.size(2) == 1)
@@ -72,7 +81,7 @@ def colorizer(n = 255):
 
 
 
-def overlay_labels(image, labels, color_map = default_map):
+def overlay_labels(image, labels, color_map = default_map, alpha=0.4):
     assert(image.dim() == 3 and image.size(2) == 3)
 
     if(labels.dim() == 2):
@@ -83,18 +92,18 @@ def overlay_labels(image, labels, color_map = default_map):
     labels = cv.resize(labels, dim, interpolation = cv.INTER_NEAREST)
 
     labels_color = colorize(labels, color_map).float()
-    mask = 0.5 * labels.clamp_(0, 1).expand_as(labels_color).float()
+    mask = alpha * labels.clamp_(0, 1).expand_as(labels_color).float()
 
     return (image.float() * (1 - mask) + labels_color * mask).type_as(image)
 
 
-def overlay_batches(images, target, cols = 6, color_map = default_map):
+def overlay_batches(images, target, cols = 6, color_map = default_map, alpha=0.4):
     images = tensor.tile_batch(images, cols)
 
     target = target.view(*target.size(), 1)
     target = tensor.tile_batch(target, cols)
 
-    return overlay_labels(images, target, color_map)
+    return overlay_labels(images, target, color_map, alpha)
 
 
 def counts(target, class_names = None):

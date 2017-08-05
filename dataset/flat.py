@@ -42,6 +42,9 @@ def find_files(dir, file_filter):
     return images
 
 
+
+
+
 class FlatFolder(data.Dataset):
 
     def __init__(self, root, loader, file_filter = image_file, transform=None):

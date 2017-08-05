@@ -15,8 +15,8 @@ def add(parser):
     parser.add_argument('--batch_size', type=int, default=16, metavar='N',
                         help='input batch size for training (default: 64)')
 
-    parser.add_argument('--epoch_size', type=int, default=512, metavar='E',
-                        help='epoch size for training (default: 1024)')
+    parser.add_argument('--epoch_size', type=int, default=None, metavar='E',
+                        help='epoch size for training (default: training set size)')
 
     parser.add_argument('--load', action='store_true', default=False,
                         help='load progress from previous training')
@@ -33,7 +33,7 @@ def add(parser):
     parser.add_argument('--visualize', action='store_true', default=False,
                         help='visualize model')
 
-    parser.add_argument('--num-workers', type=int, default=2, metavar='W',
+    parser.add_argument('--num_workers', type=int, default=2, metavar='W',
                         help='number of workers used to process dataset')
 
     parser.add_argument('--name', default='experiment',

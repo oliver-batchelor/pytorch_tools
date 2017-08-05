@@ -83,3 +83,16 @@ def show_indexed_batch(t, cols=int(6)):
 
     color = colorizer(tiled)
     return cv.display(color)
+
+
+def centre_crop(t, size):
+    d = t.dim()
+
+    dw = t.size(d-1) - size[3]
+    dh = t.size(d-2) - size[2]
+
+
+    if not (dw >= 0 and dh >= 0):
+        print(t.size(), size)
+
+    return t.narrow(d-1, dw//2, size[3]).narrow(d-2, dh//2, size[2]).contiguous()    

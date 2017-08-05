@@ -1,7 +1,8 @@
 
 import torch
+from torch.utils.data.sampler import Sampler
 
-class RepeatSampler(torch.utils.data.sampler.Sampler):
+class RepeatSampler(Sampler):
     """Samples elements randomly, repeating as necessary.
     Arguments:
         num_samples (int): number of samples per epoch
@@ -9,12 +10,15 @@ class RepeatSampler(torch.utils.data.sampler.Sampler):
 
     """
 
-    def __init__(self, num_samples, dataset):
+    def __init__(self, num_samples, data_size):
+
         self.num_samples = num_samples
-        self.dataset = dataset
+        self.data_size = data_size
+
+        assert self.num_samples > 0
 
     def __iter__(self):
-        return iter(torch.LongTensor(self.num_samples).random_(0, len(self.dataset)))
+        return iter(torch.LongTensor(self.num_samples).random_(0, self.data_size))
 
     def __len__(self):
         return self.num_samples
