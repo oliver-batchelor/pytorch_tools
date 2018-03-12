@@ -15,7 +15,7 @@ def make_experiment(log_path, name, dry_run=False, load=False):
             backup_name = enumerate_name(name, os.listdir(log_path))
             backup_path = os.path.join(log_path, backup_name)
 
-        
+
             print("moving old experiment to: " + backup_path)
             os.rename(output_path, backup_path)
 
@@ -44,6 +44,8 @@ class Null:
     def scalar(self, name, value, step=None, wall_time=None):
         pass
 
+    def flush():
+        pass
 
 class Logger:
     def __init__(self, log_file):
@@ -58,7 +60,6 @@ class Logger:
 
         event = tf.Event(wall_time=wall_time, step=step, summary=summary)
         self.writer.add_event(event)
-        self.writer.flush()
 
     def image(self, name, image, step):
         session = tf.Session()
@@ -72,4 +73,6 @@ class Logger:
 
         summary = session.run(s, feed_dict={p: image.numpy()})
         self.writer.add_summary(summary, step)
+
+    def flush(self):
         self.writer.flush()

@@ -6,6 +6,8 @@ def split(t, dim = 0):
     return [chunk.squeeze(dim) for chunk in t.chunk(t.size(dim), dim)]
 
 
+
+
 def tile_batch(t, cols=int(6)):
     assert(t.dim() == 4)
 
@@ -95,4 +97,15 @@ def centre_crop(t, size):
     if not (dw >= 0 and dh >= 0):
         print(t.size(), size)
 
-    return t.narrow(d-1, dw//2, size[3]).narrow(d-2, dh//2, size[2]).contiguous()    
+    return t.narrow(d-1, dw//2, size[3]).narrow(d-2, dh//2, size[2]).contiguous()
+
+
+def pluck(t, indices, dim1=0, dim2=1):
+    n = indices.size(0)
+    #print(indices.dim(), indices.size(), t.size(), dim1, dim2)
+    assert indices.dim() == 1 and t.size(dim1) == n
+    t = t.contiguous()
+    indices = indices.long()
+    r = torch.arange(0, n).long().mul_(t.stride(dim1))
+    indices = indices.mul(t.stride(dim2)) + r
+    return t.view(-1).index(indices)

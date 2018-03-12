@@ -1,6 +1,8 @@
 import os
 import torch
 
+import torch.nn as nn
+
 import argparse
 import shlex
 
@@ -9,8 +11,16 @@ def create(models, params, args):
     model = models[params.model]
 
     print(args)
-
     return model.create(params, **args)
+
+def model_stats(model):
+    convs = 0
+    for m in model.modules():
+        if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+            convs += 1
+
+    parameters = sum([p.nelement() for p in model.parameters()])
+    print("Model of {} parameters, {} convolutions".format(parameters, convs))
 
 def add_arguments(parser, parameters):
     for name, (default, help) in parameters.items():
@@ -38,11 +48,11 @@ def parse_params(models, model_desc):
     return args
 
 
-def save(path, model, model_params, epoch, score):
-    model_file = os.path.join(path, 'model.pth')
+def save(model_file, model, model_params, epoch, score):
+    path = os.path.basename(model_file)
 
     if not os.path.isdir(path):
-        os.mkdirs(path)
+        os.makedirs(path)
 
     state = {
         'epoch':    epoch,
@@ -55,13 +65,10 @@ def save(path, model, model_params, epoch, score):
     torch.save(state, model_file)
 
 
-
-def load(models, path, args):
-
-    model_file = os.path.join(path, 'model.pth')
+def load(models, model_file, args):
     print('loading model %s' % model_file)
 
-    state = torch.load(path)
+    state = torch.load(model_file)
     params = state['params']
     model = create(models, params, args)
 

@@ -10,14 +10,20 @@ default_statistics = Struct(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
 
 
+def _rgb_bgr(cv_image):
+    if(len(cv_image.shape) == 3 and cv_image.shape[2] == 3):
+        cv_image = cv2.cvtColor(cv_image, cv2.COLOR_BGR2RGB)
+    return cv_image
+
 def _bgr_rgb(cv_image):
     if(len(cv_image.shape) == 3 and cv_image.shape[2] == 3):
         cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
     return cv_image
 
 def imread(path, flag=cv2.IMREAD_UNCHANGED):
-    cv_image = _bgr_rgb(cv2.imread(path, flag))
-    assert cv_image is not None, "imread: failed to load " + pathf
+    cv_image = cv2.imread(path, flag)
+    assert cv_image is not None, "imread: failed to load " + str(path)
+    cv_image = _bgr_rgb(cv_image)
 
     image = torch.from_numpy (cv_image)
 
@@ -55,7 +61,7 @@ def display(t):
     return waitKey()
 
 def imshow(name, t):
-    cv2.imshow(name, _bgr_rgb(t.numpy()))
+    cv2.imshow(name, _rgb_bgr(t.numpy()))
     waitKey(1)
 
 

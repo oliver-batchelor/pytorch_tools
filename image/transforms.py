@@ -1,5 +1,6 @@
 import torch
 import math
+import numbers
 
 from tools.image import cv
 from tools import Struct
@@ -74,23 +75,23 @@ def random_check(lower, upper):
     else:
         return random.randint(lower, upper)
 
-def random_region(image_size, size, border = 0):
+def random_region(image_size, crop_size, border = 0):
+    w, h = image_size
+    tw, th = crop_size
 
-    w, h = image_size[1], image_size[0]
-    tw, th = size
+    x = random_check(border, w - tw - border)
+    y = random_check(border, h - th - border)
 
-    x1 = random_check(border, w - tw - border)
-    y1 = random_check(border, h - th - border)
-
-    return (x1, y1), (x1 + tw, y1 + th)
+    return (x, y)
 
 def random_crop(dim, border=0):
     def crop(image):
         h, w, c = image.size()
         assert dim[0] + border <= w and dim[1] + border <= h
 
-        pos, _ = random_region(image.size(), dim, border)
-        return image.narrow(0, pos[1], dim[1]).narrow(1, pos[0], dim[0])
+        size = (image.size(1), image.size(0))
+        x, y = random_region(size, dim, border)
+        return image.narrow(0, y, dim[1]).narrow(1, x, dim[0])
     return crop
 
 def centre_crop(dim):
@@ -108,7 +109,7 @@ def clamp(lower, upper, *xs):
     return min(upper, max(lower, *xs))
 
 def randoms(*ranges):
-    pair = lambda r: (r, -r) if isinstance(r, int) else r
+    pair = lambda r: (r, -r) if isinstance(r, numbers.Number) else r
     return [random.uniform(*pair(r)) for r in ranges]
 
 
@@ -145,21 +146,21 @@ def affine_crop(input_crop, dest_size, scale_range=(1, 1), rotation_size=0, bord
     return f
 
 
-def image_augmentation(dest_size, affine_jitter=0, perspective_jitter=0, translation=0, scale_range=(1, 1), rotation_size=0, flip=False, border_mode=border.constant, border_fill=default_statistics.mean):
+def image_augmentation(dest_size, affine_jitter=0, perspective_jitter=0, translation=0, scale_range=(1, 1), rotation_size=0, flip=True, border_mode=border.constant, border_fill=default_statistics.mean):
     def f(image):
-        t = make_affine_augmentation(image.size(), dest_size, translation=translation, flip=flip, scale_range=scale_range, rotation_size=rotation_size)
+        t = random_affine(image.size(), dest_size, translation=translation, flip=flip, scale_range=scale_range, rotation_size=rotation_size)
 
         if affine_jitter > 0:
-            t = make_affine_jitter(dest_size, affine_jitter).mm(t)
+            t = random_affine_jitter(dest_size, affine_jitter).mm(t)
 
         if perspective_jitter > 0:
-            t = make_perspective_jitter(dest_size, perspective_jitter).mm(t)
+            t = random_perspective_jitter(dest_size, perspective_jitter).mm(t)
 
         return warp_perspective(image, t, dest_size, border_mode=border_mode, border_fill=border_fill)
     return f
 
 
-def make_perspective_jitter(image_size, pixels=1):
+def random_perspective_jitter(image_size, pixels=1):
     (w, h) = image_size
 
     corners = torch.FloatTensor ([(0, 0), (0, h), (w, h), (w, 0)])
@@ -167,7 +168,8 @@ def make_perspective_jitter(image_size, pixels=1):
 
     return cv.getPerspectiveTransform(corners, dest)
 
-def make_affine_jitter(image_size, pixels=1):
+
+def random_affine_jitter(image_size, pixels=1):
     (w, h) = image_size
 
     corners = torch.FloatTensor ([(0, 0), (0, h), (w, h)])
@@ -187,7 +189,7 @@ def perspective_jitter(pixels=1, border_mode=border.constant, border_fill=defaul
 
 
 
-def make_affine(dest_size, centre, scale=1, rot=0, flip=1):
+def make_affine(dest_size, centre, scale=(1, 1), rot=0, flip=1):
     sx, sy = scale
 
     toCentre = translation(-centre[0], -centre[1])
@@ -198,24 +200,30 @@ def make_affine(dest_size, centre, scale=1, rot=0, flip=1):
     return fromCentre.mm(s).mm(r).mm(toCentre)
 
 
-def make_affine_augmentation(image_size, dest_size, translation=0, scale_range=(1, 1), rotation_size=0, flip=False):
+def random_affine(image_size, dest_size, translation=0, scale_range=(1, 1), rotation_size=0, flip=False):
     """ Applying affine augmentation to an image, random translation, rotation and scale """
 
     tx, ty, s, r, flip = randoms(translation, translation, scale_range, rotation_size, 1 if flip else 0)
     centre = (image_size[0] * 0.5 + tx, image_size[1] * 0.5 + ty)
 
-    return make_affine(dest_size, centre, (s, s), r, 1 if flip > 0 else -1)
+    return make_affine(dest_size, centre, (s, s), r, 1 if flip < 0.5 else -1)
 
 
+def perspective_transform(t, points):
+    points = points.mm(t.t().float())
 
-def make_affine_crop(image_size, input_crop, dest_size, scale_range=(1, 1), rotation_size=0, border=0):
-    """ Cropping a smaller region out of a larger image with affine augmentation """
+    w =  points.narrow(1, 2, 1)
+    points = points.narrow(1, 0, 2)
+    return points / w.expand_as(points)
 
-    min_scale = clamp(scale_range[0], scale_range[1], dest_size[0] / image_size[1], dest_size[1] / image_size[0])
-    scale = random.uniform(min_scale, scale_range[1])
+def fit_transform(input_size, t, pad=0):
+    (w, h) = input_size
 
-    crop_size = (math.floor(1/scale * input_crop[0]), math.floor(1/scale * input_crop[1]))
-    centre, extents = random_region(image_size, crop_size, border)
+    input_corners = torch.FloatTensor ([(-pad, -pad, 1), (-pad, h+pad, 1), (w+pad, h+pad, 1), (w+pad, -pad, 1)])
+    corners = perspective_transform(t, input_corners)
 
-    rotation = random.uniform(-rotation_size, rotation_size)
-    return make_affine(dest_size, centre, (scale, scale), rotation)
+    (l, _), (u, _) = corners.min(0), corners.max(0)
+    dest_size = u - l
+    offset =  -l
+
+    return translation(*offset).mm(t), tuple(dest_size.long())
