@@ -30,10 +30,10 @@ def tile_batch(t, cols=int(6)):
     return out
 
 
-def count_elements(indices, num_entries  = None):
+def count_elements(indices, num_entries = None):
     indices = indices.long().view(-1)
 
-    num_entries = num_entries or (indices.max() + 1)
+    num_entries = num_entries or (indices.max().item() + 1)
     c = torch.LongTensor(num_entries).fill_(0)
 
     ones = torch.LongTensor([1]).expand(indices.size(0))

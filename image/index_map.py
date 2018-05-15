@@ -96,8 +96,8 @@ def make_color_map(n):
 def colorize(image, color_map):
     assert(image.dim() == 3 and image.size(2) == 1)
 
-    flat_indices = image.view(image.nelement()).long()
-    rgb = color_map.index(flat_indices)
+    flat_indices = image.view(-1).long()
+    rgb = color_map[flat_indices]
 
     return rgb.view(image.size(0), image.size(1), 4)
 
@@ -109,8 +109,6 @@ def colorizer(n = 255):
 
     color_map = make_color_map(n)
     return lambda image: colorize(image, color_map)
-
-
 
 
 def overlay_labels(image, labels, color_map = default_map, alpha=0.4):
