@@ -16,6 +16,9 @@ class Struct:
     def keys(self):
         return self.__dict__.keys()
 
+    def values(self):
+        return self.__dict__.values()        
+
 
     def __repr__(self):
         return self.__dict__.__repr__()
@@ -47,6 +50,18 @@ class Struct:
             r[k] = other[k]
 
         return Struct(**r)
+
+
+    def merge(self, other):
+        """
+        returns a struct which is a merge of this struct and another.
+        """
+
+        assert isinstance(other, Struct)
+        d = self.__dict__.copy()
+        d.update(other.__dict__)
+
+        return Struct(**d)
 
     def __radd__(self, other):
         return self.__add__(other)

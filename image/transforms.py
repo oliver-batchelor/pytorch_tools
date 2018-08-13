@@ -73,7 +73,7 @@ def random_check(lower, upper):
     if (lower >= upper):
         return (lower + upper) / 2
     else:
-        return random.randint(lower, upper)
+        return random.uniform(lower, upper)
 
 def random_region(image_size, crop_size, border = 0):
     w, h = image_size

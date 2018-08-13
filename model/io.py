@@ -6,12 +6,23 @@ import torch.nn as nn
 import argparse
 import shlex
 
+from tools import Struct
+from tools.parameters import add_arguments, default_parameters
+
 def create(models, params, args):
     assert params.model in models
     model = models[params.model]
 
-    print(args)
+    defaults = default_parameters(model.parameters)
+    params = defaults.merge(params)
+
+    print(params, args)
     return model.create(params, **args)
+
+
+def describe_models(models):
+    return {name: describe_parameters(model.parameters()) for name, model in models.items()}
+
 
 def model_stats(model):
     convs = 0
@@ -21,15 +32,6 @@ def model_stats(model):
 
     parameters = sum([p.nelement() for p in model.parameters()])
     print("Model of {} parameters, {} convolutions".format(parameters, convs))
-
-def add_arguments(parser, parameters):
-    for name, (default, help) in parameters.items():
-
-        if(type(default) == bool):
-            action=('store_false' if default else 'store_true')
-            parser.add_argument('--' + name, default=default, type=type(default), help=help)
-        else:
-            parser.add_argument('--' + name, default=default, type=type(default), help=help)
 
 
 def parse_params(models, model_desc):
@@ -46,6 +48,8 @@ def parse_params(models, model_desc):
 
     args = parser.parse_args(shlex.split(model_desc[0]))
     return args
+
+
 
 
 def save(model_file, model, model_params, epoch, score):

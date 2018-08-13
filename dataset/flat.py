@@ -42,6 +42,26 @@ def find_files(dir, file_filter):
     return images
 
 
+class FlatList(data.Dataset):
+
+    def __init__(self, images, loader, transform=None):
+
+        self.images = images
+        self.transform = transform
+        self.loader = loader
+
+    def __getitem__(self, index):
+
+        image = self.loader(self.images[index])
+        if self.transform is not None:
+            image = self.transform(image)
+
+        return image
+
+    def __len__(self):
+        return len(self.images)
+
+
 
 
 
