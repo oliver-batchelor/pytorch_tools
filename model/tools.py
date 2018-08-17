@@ -4,20 +4,16 @@ import torch
 import torch.nn as nn
 
 import argparse
-import shlex
 
 from tools import Struct
 from tools.parameters import add_arguments, default_parameters
 
-def create(models, params, args):
-    assert params.model in models
-    model = models[params.model]
+def create(models, model_args, dataset_args):
 
-    defaults = default_parameters(model.parameters)
-    params = defaults.merge(params)
+    assert model_args.choice in models, "model not found " + model_args.choice
+    model = models[model_args.choice]
 
-    print(params, args)
-    return model.create(params, **args)
+    return model.create(model_args.parameters, dataset_args)
 
 
 def describe_models(models):
@@ -34,33 +30,17 @@ def model_stats(model):
     print("Model of {} parameters, {} convolutions".format(parameters, convs))
 
 
-def parse_params(models, model_desc):
-
-    parser = argparse.ArgumentParser(prog="--model ", description='Model configuration')
-    sub_parsers = parser.add_subparsers(help='model and model specific parameters', dest="model")
-
-    for name, model in models.items():
-
-        sub_parser = sub_parsers.add_parser(name)
-        add_arguments(sub_parser, model.parameters)
-
-    assert len(model_desc) > 0, "required model parameter missing"
-
-    args = parser.parse_args(shlex.split(model_desc[0]))
-    return args
 
 
-
-
-def save(model_file, model, model_params, epoch, score):
-    path = os.path.basename(model_file)
+def save(model_file, model, model_args, epoch, score):
+    path = os.path.dirname(model_file)
 
     if not os.path.isdir(path):
         os.makedirs(path)
 
     state = {
         'epoch':    epoch,
-        'params':   model_params,
+        'params':   model_args,
         'state':    model.state_dict(),
         'score':    score
     }

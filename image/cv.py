@@ -121,6 +121,9 @@ def resize(image, dim, **kwargs):
     result = torch.from_numpy(cv2.resize(image.numpy(), dim, **kwargs))
     return result.view(dim[1], dim[0], channels)
 
+def rectangle(image, lower, upper, color, thickness=1):
+    return torch.from_numpy(image.numpy())
+
 inter = Struct(cubic = cv2.INTER_CUBIC, nearest = cv2.INTER_NEAREST, area = cv2.INTER_AREA)
 
 border = Struct(

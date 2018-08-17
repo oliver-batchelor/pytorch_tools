@@ -1,5 +1,12 @@
 from collections import Counter
 
+def _to_dicts(s):
+    if(type(s) is Struct):
+        return {k:_to_dicts(v) for k, v in s.__dict__.items()}
+    else:
+        return s
+
+
 class Struct:
     def __init__(self, **entries):
         self.__dict__.update(entries)
@@ -17,8 +24,18 @@ class Struct:
         return self.__dict__.keys()
 
     def values(self):
-        return self.__dict__.values()        
+        return self.__dict__.values()
 
+    def to_dicts(self):
+        return _to_dicts(self)
+
+    def map(self, f):
+        m = {k: f(v) for k, v in self.__dict__.items()}
+        return Struct(**m)
+
+    def mapWithKey(self, f):
+        m = {k: f(k, v) for k, v in self.__dict__.items()}
+        return Struct(**m)
 
     def __repr__(self):
         return self.__dict__.__repr__()
@@ -74,3 +91,38 @@ def get_default_args(func):
     """
     args, varargs, keywords, defaults = inspect.getargspec(func)
     return dict(zip(reversed(args), reversed(defaults)))
+
+
+def replace(d, key, value):
+    return {**d, key:value}
+
+def over(key, f):
+    def modify(d):
+        value = f(d[key])
+        return replace(d, key, value)
+    return modify
+
+def transpose(dicts):
+    accum = {}
+    for d in dicts:
+        for k, v in d.items():
+            if k in accum:
+                accum[k].append(v)
+            else:
+                accum[k] = [v]
+    return accum
+
+def transposes(structs):
+    return Struct(**transpose(d.__dict__ for d in structs))
+
+
+
+def filterNone(xs):
+    return [x for x in xs if x is not None]
+
+def filterMap(f, xs):
+    return filterNone(map(f, xs))
+
+
+def pluck(k, xs):
+    return [d[k] for d in xs]

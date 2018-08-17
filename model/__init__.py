@@ -24,9 +24,3 @@ def concat_skip(inputs, skip, scale):
     upscaled = centre_crop(upscaled, inputs.size())
 
     return torch.cat([inputs, upscaled], 1)
-
-def selu(inputs):
-    alpha = 1.6732632423543772848170429916717
-    scale = 1.0507009873554804934193349852946
-
-    return F.elu(inputs, alpha, inplace=True) * scale
