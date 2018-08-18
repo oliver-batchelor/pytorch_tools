@@ -121,8 +121,43 @@ def resize(image, dim, **kwargs):
     result = torch.from_numpy(cv2.resize(image.numpy(), dim, **kwargs))
     return result.view(dim[1], dim[0], channels)
 
-def rectangle(image, lower, upper, color, thickness=1):
-    return torch.from_numpy(image.numpy())
+def int_list(p):
+    if type(p) is tuple:
+        return p
+    elif type(p) is torch.Tensor:
+        return tuple(p.int().tolist())
+    else:
+        assert false, "could not convert to tuple: " + torch.typename(p)
+
+
+line_type = Struct (
+    filled = cv2.FILLED,
+    line4 = cv2.LINE_4,
+    line8 = cv2.LINE_8,
+    lineAA = cv2.LINE_AA
+)
+
+
+
+def rectangle(image, lower, upper, color=(255, 255, 255, 255), thickness=1, line=line_type.lineAA):
+
+
+    image = image.numpy()
+    cv2.rectangle(image, int_list(lower), int_list(upper), color=int_list(color), thickness=int(thickness), lineType = line)
+
+    return torch.from_numpy(image)
+
+
+    # cv2.putText(img,'OpenCV',(10,500), font, 4,(255,255,255),2,cv2.LINE_AA)
+
+
+def putText(image, text, pos, scale=1, color=(255, 255, 255, 255), thickness=1, line=line_type.lineAA):
+    image = image.numpy()
+
+    cv2.putText(image, str(text), int_list(pos), fontFace=1, fontScale=scale, color=int_list(color), thickness=int(thickness), lineType = line)
+
+    return torch.from_numpy(image)
+
 
 inter = Struct(cubic = cv2.INTER_CUBIC, nearest = cv2.INTER_NEAREST, area = cv2.INTER_AREA)
 

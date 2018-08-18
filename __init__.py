@@ -26,8 +26,18 @@ class Struct:
     def values(self):
         return self.__dict__.values()
 
+    def __eq__(self, other):
+        if type(other) == Struct:
+            return self.__dict__ == other.__dict__
+        else:
+            return False
+
     def to_dicts(self):
         return _to_dicts(self)
+
+    def subset(self, *keys):
+        d = {k:self[k] for k in keys}
+        return Struct(**d)
 
     def map(self, f):
         m = {k: f(v) for k, v in self.__dict__.items()}

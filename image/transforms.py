@@ -125,11 +125,31 @@ border = cv.border
 
 def warp_affine(image, t, dest_size, border_mode=border.constant, border_fill=default_statistics.mean):
     border_fill  = [255 * x for x in border_fill]
-    return cv.warpAffine(image, t, dest_size, flags = cv.inter.cubic, borderMode=border_mode, borderValue = border_fill)
+    return cv.warpAffine(image, t, dest_size, flags = cv.inter.area, borderMode=border_mode, borderValue = border_fill)
+
+
+def warp_affine(image, t, dest_size, border_mode=border.constant, border_fill=default_statistics.mean):
+    border_fill  = [255 * x for x in border_fill]
+    return cv.warpAffine(image, t, dest_size, flags = cv.inter.area, borderMode=border_mode, borderValue = border_fill)
+
+
+def resize_to(image, dest_size):
+    return cv.resize(image, dest_size, interpolation = cv.inter.area)
+
+
+
+def resize_scale(image, scale):
+    input_size = (image.size(1), image.size(0))
+    dest_size = (int(input_size[0] * scale), int(input_size[1] * scale))
+    return resize_to(image, dest_size)
+
+def adjust_scale(scale):
+    return lambda image: resize_scale(image, scale)
+
 
 def warp_perspective(image, t, dest_size, border_mode=border.constant, border_fill=default_statistics.mean):
     border_fill  = [255 * x for x in border_fill]
-    return cv.warpPerspective(image, t, dest_size, flags = cv.inter.cubic, borderMode=border_mode, borderValue = border_fill)
+    return cv.warpPerspective(image, t, dest_size, flags = cv.inter.area, borderMode=border_mode, borderValue = border_fill)
 
 
 def affine_crop(input_crop, dest_size, scale_range=(1, 1), rotation_size=0, border_mode=border.constant, border_fill=default_statistics.mean):

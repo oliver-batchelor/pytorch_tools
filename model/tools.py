@@ -47,14 +47,3 @@ def save(model_file, model, model_args, epoch, score):
 
     print('saving model %s' % model_file)
     torch.save(state, model_file)
-
-
-def load(models, model_file, args):
-    print('loading model %s' % model_file)
-
-    state = torch.load(model_file)
-    params = state['params']
-    model = create(models, params, args)
-
-    model.load_state_dict(state['state'])
-    return model, params, state['epoch'], state['score']

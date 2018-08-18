@@ -51,20 +51,25 @@ def parse_choice(name, choice, str):
     choices = list(choice.options.keys())
     assert option in choice.options, "option '" + option + "' missing, expected one of " + str(choices)
     args = parse_args(choice.options[option], choice.help, cmdArgs)
-
     return Struct (choice = option, parameters = args)
-
-
 
 
 def param_type(value):
     return type(value).__name__
 
-def param(default, help='', type=None):
-    return Struct (default=default, help=help, type=type or param_type(default))
+def param(default=None, help='', type=None, required=False):
+    assert default is not None or type is not None, "type parameter required if default is not provided"
+    return Struct (default=default, required=required,  help=help, type=type or param_type(default))
 
-def choice(default, options, help=''):
-    return Struct (default=default, options=options, help=help, type='choice')
+def required(type, help=''):
+    return Struct (default=None, required=True, help=help, type=type)
+
+def choice(default, options, help='', required=False):
+    return Struct (default=default, options=options, help=help, type='choice', required=required)
+
+
+def group(title, **parameters):
+    return Struct(title=title, type='group', parameters=Struct(**parameters))
 
 
 def add_arguments(parser, parameters):
@@ -82,11 +87,18 @@ def add_arguments(parser, parameters):
 
 
     for name, parameter in parameters.items():
-        default = parameter.default
-        param_type = to_type(parameter.type)
-
-        if(param_type is 'bool'):
-            parser.add_argument('--' + name, default=default, type=bool,  help=parameter.help, action=('store_false' if default else 'store_true'))
+        if parameter.type == 'group':
+            group = parser.add_argument_group(parameter.title)
+            add_arguments(group, parameter.parameters)
         else:
-            parser.add_argument('--' + name, default=default, type=param_type, help=parameter.help)
+            default = parameter.default
+            help = parameter.help
+
+            if parameter.default is not None:
+                help = parameter.help + ", default(" + str(default) + ")"
+
+            if(parameter.type == 'bool' and default is not None):
+                parser.add_argument('--' + name, required=parameter.required, default=default, help=help, action=('store_false' if default else 'store_true'))
+            else:
+                parser.add_argument('--' + name, required=parameter.required, default=default, type=to_type(parameter.type), help=help)
     return parser
