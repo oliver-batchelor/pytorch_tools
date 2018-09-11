@@ -44,8 +44,8 @@ def parse_args(parameters, description, cmdArgs=None):
     return Struct(**args.__dict__)
 
 
-def parse_choice(name, choice, str):
-    tokens = shlex.split(str)
+def parse_choice(name, choice, args):
+    tokens = shlex.split(args)
     option, *cmdArgs = tokens
 
     choices = list(choice.options.keys())
@@ -97,8 +97,8 @@ def add_arguments(parser, parameters):
             if parameter.default is not None:
                 help = parameter.help + ", default(" + str(default) + ")"
 
-            if(parameter.type == 'bool' and default is not None):
-                parser.add_argument('--' + name, required=parameter.required, default=default, help=help, action=('store_false' if default else 'store_true'))
+            if(parameter.type == 'bool' and default is False):
+                parser.add_argument('--' + name, required=parameter.required, default=default, help=help, action='store_true')
             else:
                 parser.add_argument('--' + name, required=parameter.required, default=default, type=to_type(parameter.type), help=help)
     return parser
