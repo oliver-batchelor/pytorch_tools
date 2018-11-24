@@ -1,13 +1,19 @@
 from collections import Counter
+from collections.abc import Mapping
+import torch
+from numbers import Number
+import math
+
+import operator
 
 def _to_dicts(s):
-    if(type(s) is Struct):
+    if isinstance(s, Struct):
         return {k:_to_dicts(v) for k, v in s.__dict__.items()}
     else:
         return s
 
 
-class Struct:
+class Struct(Mapping):
     def __init__(self, **entries):
         self.__dict__.update(entries)
 
@@ -27,25 +33,24 @@ class Struct:
         return self.__dict__.values()
 
     def __eq__(self, other):
-        if type(other) == Struct:
+        if isinstance(other, Struct):
             return self.__dict__ == other.__dict__
         else:
             return False
 
-    def to_dicts(self):
+    def _to_dicts(self):
         return _to_dicts(self)
 
-    def subset(self, *keys):
+    def _subset(self, *keys):
         d = {k:self[k] for k in keys}
-        return Struct(**d)
+        return self.__class__(**d)
 
-    def map(self, f):
-        m = {k: f(v) for k, v in self.__dict__.items()}
-        return Struct(**m)
+    def _map(self, f, *args, **kwargs):
+        return self.__class__(**{k: f(v, *args, **kwargs) for k, v in self.items()})
 
-    def mapWithKey(self, f):
+    def _mapWithKey(self, f):
         m = {k: f(k, v) for k, v in self.__dict__.items()}
-        return Struct(**m)
+        return self.__class__(**m)
 
     def __repr__(self):
         return self.__dict__.__repr__()
@@ -53,33 +58,43 @@ class Struct:
     def __str__(self):
         return self.__dict__.__str__()
 
-    def __floordiv__(self, divisor):
-        return Struct(**{k: v/divisor for (k, v) in self.items()})
+    def __len__(self):
+        return self.__dict__.__len__()
 
-    def __truediv__(self, divisor):
-        return self.__floordiv__(divisor)
+    def __floordiv__(self, other):
+        if isinstance(other, Number):
+            return self._map(operator.floordiv, other)
+        else:
+            return self._zipWith(operator.floordiv, other)
 
+    def __truediv__(self, other):
+        if isinstance(other, Number):
+            return self._map(operator.truediv, other)
+        else:
+            return self._zipWith(operator.truediv, other)
 
     def __add__(self, other):
-        if other == 0:
-            return self
+        if isinstance(other, Number):
+            return self._map(operator.add, other)
+        else:
+            return self._zipWith(operator.add, other)
 
+    def __mul__(self, other):
+        if isinstance(other, Number):
+            return self._map(operator.mul, other)
+        else:
+            return self._zipWith(operator.mul, other)
+
+
+    def _zipWith(self, f, other):
         assert isinstance(other, Struct)
+        assert self.keys() == other.keys()
 
-        r = {}
-        for k in (self.keys() & other.keys()):
-            r[k] = self[k] + other[k]
-
-        for k in (self.keys() - other.keys()):
-            r[k] = self[k]
-
-        for k in (other.keys() - self.keys()):
-            r[k] = other[k]
-
-        return Struct(**r)
+        r = {k:f(self[k], other[k]) for k in self.keys()}
+        return self.__class__(**r)
 
 
-    def merge(self, other):
+    def _merge(self, other):
         """
         returns a struct which is a merge of this struct and another.
         """
@@ -88,11 +103,256 @@ class Struct:
         d = self.__dict__.copy()
         d.update(other.__dict__)
 
-        return Struct(**d)
+        return self.__class__(**d)
+
+    def _extend(self, **values):
+        d = self.__dict__.copy()
+        d.update(values)
+
+        return self.__class__(**d)
+
 
     def __radd__(self, other):
         return self.__add__(other)
 
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+
+class ZipList():
+    def __init__(self, elems):
+        self.elems = list(elems)
+
+
+    def __getitem__(self, index):
+        return self.elems[index]
+
+    def __iter__(self):
+        return self.elems.__iter__()
+
+    def __eq__(self, other):
+        if isinstance(other, ZipList):
+            return self.elems == other.elems
+        else:
+            return False
+
+    def __repr__(self):
+        return self.elems.__repr__()
+
+    def __str__(self):
+        return self.elems.__str__()
+
+    def __len__(self):
+        return self.elems.__len__()
+
+    def __floordiv__(self, other):
+        if isinstance(other, Number):
+            return self._map(operator.floordiv, other)
+        else:
+            return self._zipWith(operator.floordiv, other)
+
+    def __truediv__(self, other):
+        if isinstance(other, Number):
+            return self._map(operator.truediv, other)
+        else:
+            return self._zipWith(operator.truediv, other)
+
+
+    def _map(self, f, *args, **kwargs):
+        return ZipList([f(v, *args, **kwargs) for v in self.elems])
+
+    def _zipWith(self, f, other):
+
+        assert isinstance(other, ZipList)
+        assert len(self) == len(other)
+
+        r = [f(x, y) for x, y in zip(self.elems, other.elems)]
+        return ZipList(r)
+
+
+    def __add__(self, other):
+        if isinstance(other, Number):
+            return self._map(operator.add, other)
+        else:
+            return self._zipWith(operator.add, other)
+
+    def __mul__(self, other):
+        if isinstance(other, Number):
+            return self._map(operator.mul, other)
+        else:
+            return self._zipWith(operator.mul, other)        
+
+
+    def __radd__(self, other):
+        return self.__add__(other)
+
+    def __rmul__(self, other):
+        return self.__mul__(other)
+
+    def append(x):
+        self.elems.append(x)
+        return self
+
+
+
+
+
+class Table(Struct):
+    def __init__(self, **d):
+
+        assert len(d) > 0, "empty Table"
+        t = next(iter(d.values()))
+      
+        for (k, v) in d.items():
+            assert type(v) == torch.Tensor, "expected tensor, got " + type(t).__name__
+            assert v.size(0) == t.size(0)
+
+        super(Table, self).__init__(**d)
+
+
+    def __getitem__(self, index):
+        return self.__dict__[index]
+
+
+    def _index_select(self, index):
+        if type(index) is torch.Tensor:
+            assert index.dtype == torch.int64 and index.dim() == 1
+            return self._map(lambda t: t[index])
+
+        elif type(index) is int:
+            return Struct(**{k: v[index] for k, v in self.items()})
+        assert False, "Table.index_select: unsupported index type" + type(index).__name__
+
+        
+    def _narrow(self, start, n):
+        return self._map(lambda t: t.narrow(0, start, n))
+
+    def _take(self, n):
+        return self._narrow(0, min(self._size, n))
+
+    def _drop(self, n):
+        n = min(self._size, n)
+        return self._narrow(n, self._size - n)
+
+
+    def _sequence(self):
+        return (self._index_select(i) for i in range(0, self._size))
+
+    def _sort_on(self, key, descending=False):
+        assert key in self
+        assert self[key].dim() == 1
+
+        values, inds = self[key].sort(descending = descending)
+        return Table(**{k: values if k == key else v[inds] for k, v in self.items()})
+
+    @property
+    def _head(self):
+        return next(iter(self.__dict__.values()))
+
+    @property
+    def _size(self):
+        return self._head.size(0)
+
+    @property
+    def _device(self):
+        return self._head.device
+
+    def _to(self, device):
+        return self._map(lambda t: t.to(device))
+
+    def _cpu(self):
+        return self._map(lambda t: t.cpu())
+
+
+class Histogram:
+    def __init__(self, values = torch.FloatTensor(0), range = (0, 1), num_bins = 10, trim = True):
+        assert len(range) == 2
+
+        self.range = range
+        lower, upper = self.range
+
+        bin_indexes = (values - lower) * num_bins / (upper - lower) 
+        bin_indexes = bin_indexes.long()
+
+        if trim:
+            valid = (bin_indexes >= 0) & (bin_indexes < num_bins)
+
+            values = values[valid]
+            bin_indexes = bin_indexes[valid]
+        
+        bin_indexes.clamp_(0, num_bins - 1)
+
+        self.sum         = values.sum().item()
+        self.sum_squares = values.norm(2).item()
+        self.counts = torch.bincount(bin_indexes, minlength = num_bins)
+
+    def __repr__(self):
+        return self.counts.tolist().__repr__()
+
+    def bins(self):
+        lower, upper = self.range
+        d = (upper - lower) / self.counts.size(0)
+
+        return torch.FloatTensor([lower + i * d for i in range(0, self.counts.size(0) + 1)])
+
+
+    def __add__(self, other):
+        assert isinstance(other, Histogram)
+        assert other.counts.size(0) == self.counts.size(0), "mismatched histogram sizes"
+        
+        total = Histogram(range = self.range, num_bins = self.counts.size(0))
+        total.sum = self.sum + other.sum
+        total.sum_squares = self.sum_squares + other.sum_squares
+        total.counts = self.counts + other.counts
+
+        return total
+
+
+    def __truediv__(self, x):
+        assert isinstance(x, Number)
+
+        total = Histogram(range = self.range, num_bins =  self.counts.size(0))
+        total.sum = self.sum / x
+        total.sum_squares = self.sum_squares / x
+        total.counts = self.counts / x
+
+        return total
+
+    @property
+    def std(self):
+
+        n = self.counts.sum().item()
+        if n > 1:
+            sum_squares = self.sum_squares - (self.sum * self.sum / n)
+            var = max(0, sum_squares / (n - 1))
+
+            return math.sqrt(var)
+        else:
+            return 0
+
+    @property
+    def mean(self):
+        n = self.counts.sum().item()
+        if n > 0:
+            return self.sum / self.counts.sum().item()
+        else:
+            return 0
+
+
+
+
+def show_shapes(x):
+
+    if type(x) == torch.Tensor:
+        return tuple([*x.size(), x.dtype, x.device])
+    elif type(x) == list:
+        return list(map(show_shapes, x))
+    elif type(x) == tuple:
+        return tuple(map(show_shapes, x))
+    elif isinstance(x, Mapping):
+        return {k : show_shapes(v) for k, v in x.items()}
+    else:
+        return str(x)
 
 
 def get_default_args(func):
@@ -106,13 +366,19 @@ def get_default_args(func):
 def replace(d, key, value):
     return {**d, key:value}
 
+def over_struct(key, f):
+    def modify(d):
+        value = f(d[key])
+        return Struct(**replace(d, key, value))
+    return modify
+
 def over(key, f):
     def modify(d):
         value = f(d[key])
         return replace(d, key, value)
     return modify
 
-def transpose(dicts):
+def transpose_partial(dicts):
     accum = {}
     for d in dicts:
         for k, v in d.items():
@@ -122,8 +388,22 @@ def transpose(dicts):
                 accum[k] = [v]
     return accum
 
-def transposes(structs):
-    return Struct(**transpose(d.__dict__ for d in structs))
+def transpose_partial_structs(structs):
+    return Struct(**transpose_partial(d.__dict__ for d in structs))
+
+
+def transpose_structs(structs):
+    elem = structs[0]
+    d =  {key: [d[key] for d in structs] for key in elem}
+    return Struct(**d) 
+
+
+def transpose_lists(lists):
+    return list(zip(*lists))
+
+def cat_tables(tables):
+    t = transpose_structs(tables)
+    return Table(**t._map(torch.cat)) 
 
 
 
@@ -136,3 +416,9 @@ def filterMap(f, xs):
 
 def pluck(k, xs):
     return [d[k] for d in xs]
+
+
+def const(x):
+    def f(*y):
+        return x
+    return f

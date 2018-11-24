@@ -6,9 +6,6 @@ import torch
 import numpy as np
 from tools import Struct
 
-default_statistics = Struct(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
-
-
 
 def _rgb_bgr(cv_image):
     if(len(cv_image.shape) == 3 and cv_image.shape[2] == 3):

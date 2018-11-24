@@ -36,12 +36,16 @@ def make_parser(description, parameters):
     return add_arguments(parser, parameters)
 
 
-def parse_args(parameters, description, cmdArgs=None):
-    parser = argparse.ArgumentParser(description=description)
+def parse_args(parameters, name, description, cmdArgs=None):
+    parser = argparse.ArgumentParser(name, description=description)
     add_arguments(parser, parameters)
 
     args = parser.parse_args(cmdArgs)
     return Struct(**args.__dict__)
+
+
+def get_choice(choice):
+    return choice.choice, choice.parameters
 
 
 def parse_choice(name, choice, args):
@@ -50,7 +54,7 @@ def parse_choice(name, choice, args):
 
     choices = list(choice.options.keys())
     assert option in choice.options, "option '" + option + "' missing, expected one of " + str(choices)
-    args = parse_args(choice.options[option], choice.help, cmdArgs)
+    args = parse_args(choice.options[option], name + "." + option, choice.help, cmdArgs)
     return Struct (choice = option, parameters = args)
 
 

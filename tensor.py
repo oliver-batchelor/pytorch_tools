@@ -47,10 +47,10 @@ def insert_size(s, dim, n):
     return torch.Size(size)
 
 
-def one_hot(labels, classes, dim = 1):
+def one_hot(label, classes, dim = 1):
 
-    expanded = labels.view(insert_size(labels.size(), dim, 1))
-    target = labels.new(insert_size(labels.size(), dim, classes))
+    expanded = label.view(insert_size(label.size(), dim, 1))
+    target = label.new(insert_size(label.size(), dim, classes))
 
     return target.zero_().scatter_(dim, expanded, 1)
 

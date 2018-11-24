@@ -7,9 +7,9 @@ from tools import Struct
 
 import random
 
-default_statistics = Struct(mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+default_statistics = Struct(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.mean):
+def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std):
     assert(batch.size(3) == 3)
     batch = batch.float().div_(255)
 
@@ -18,7 +18,9 @@ def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.
 
     return batch.permute(0, 3, 1, 2)
 
-def un_normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.mean):
+
+
+def un_normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std):
     assert(batch.size(1) == 3)
     batch = batch.clone()
 
@@ -69,18 +71,16 @@ def translation(tx, ty):
       [0, 0, 1]])
 
 
-def random_check(lower, upper):
-    if (lower >= upper):
-        return (lower + upper) / 2
-    else:
-        return random.uniform(lower, upper)
+def random_check(lower, upper, border = 0):
+
+    return random.uniform(min(lower, upper) - border, max(lower, upper) + border)
 
 def random_region(image_size, crop_size, border = 0):
     w, h = image_size
     tw, th = crop_size
 
-    x = random_check(border, w - tw - border)
-    y = random_check(border, h - th - border)
+    x = random_check(0, w - tw, border)
+    y = random_check(0, h - th, border)
 
     return (x, y)
 

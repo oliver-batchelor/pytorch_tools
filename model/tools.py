@@ -16,8 +16,6 @@ def create(models, model_args, dataset_args):
     return model.create(model_args.parameters, dataset_args)
 
 
-def describe_models(models):
-    return {name: describe_parameters(model.parameters()) for name, model in models.items()}
 
 
 def model_stats(model):
@@ -32,18 +30,4 @@ def model_stats(model):
 
 
 
-def save(model_file, model, model_args, epoch, score):
-    path = os.path.dirname(model_file)
-
-    if not os.path.isdir(path):
-        os.makedirs(path)
-
-    state = {
-        'epoch':    epoch,
-        'params':   model_args,
-        'state':    model.state_dict(),
-        'score':    score
-    }
-
-    print('saving model %s' % model_file)
-    torch.save(state, model_file)
+# def merge_state_dict(model, loaded):

@@ -111,26 +111,26 @@ def colorizer(n = 255):
     return lambda image: colorize(image, color_map)
 
 
-def overlay_labels(image, labels, color_map = default_map, alpha=0.4):
+def overlay_label(image, label, color_map = default_map, alpha=0.4):
     assert(image.dim() == 3 and image.size(2) == 3)
 
-    if(labels.dim() == 2):
-        labels = labels.view(*labels.size(), 1)
+    if(label.dim() == 2):
+        label = label.view(*label.size(), 1)
 
-    assert(labels.dim() == 3 and labels.size(2) == 1)
+    assert(label.dim() == 3 and label.size(2) == 1)
     dim = (image.size(1), image.size(0))
-    labels = cv.resize(labels, dim, interpolation = cv.inter.nearest)
+    label = cv.resize(label, dim, interpolation = cv.inter.nearest)
 
 
 
-    labels_color = colorize(labels, color_map).float()
+    label_color = colorize(label, color_map).float()
     mask = torch.FloatTensor(image.size()).fill_(alpha)
 
-    if(labels_color.size(2) == 4):
-        mask = alpha * (labels_color.narrow(2, 3, 1) / 255)
-        labels_color = labels_color.narrow(2, 0, 3)
+    if(label_color.size(2) == 4):
+        mask = alpha * (label_color.narrow(2, 3, 1) / 255)
+        label_color = label_color.narrow(2, 0, 3)
 
-    return (image.float() * (1 - mask) + labels_color * mask).type_as(image)
+    return (image.float() * (1 - mask) + label_color * mask).type_as(image)
 
 
 def overlay_batches(images, target, cols = 6, color_map = default_map, alpha=0.4):
@@ -139,7 +139,7 @@ def overlay_batches(images, target, cols = 6, color_map = default_map, alpha=0.4
     target = target.view(*target.size(), 1)
     target = tensor.tile_batch(target, cols)
 
-    return overlay_labels(images, target, color_map, alpha)
+    return overlay_label(images, target, color_map, alpha)
 
 
 def counts(target, class_names = None):
