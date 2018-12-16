@@ -3,11 +3,11 @@ import math
 import numbers
 
 from tools.image import cv
-from tools import Struct
+from tools import struct
 
 import random
 
-default_statistics = Struct(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+default_statistics = struct(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
 def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std):
     assert(batch.size(3) == 3)
@@ -48,6 +48,16 @@ def adjust_gamma(adjustment=0.1, per_channel=0):
         return image
     return f
 
+def adjust_brightness(brightness = 0, contrast = 0):
+    def f(image):
+        b = random.uniform(-brightness, brightness) * 255
+        c = random.uniform(1 - contrast, 1 + contrast)
+
+        image = image.float().add_(b).mul_(c).clamp_(0, 255).byte()
+        return image
+    return f    
+
+
 
 def scaling(sx, sy):
     return torch.DoubleTensor ([
@@ -71,38 +81,44 @@ def translation(tx, ty):
       [0, 0, 1]])
 
 
-def random_check(lower, upper, border = 0):
+def random_crop(image_size, crop_size, border_bias = 0):
+    width, height = image_size
+    crop_width, crop_height = crop_size
 
-    return random.uniform(min(lower, upper) - border, max(lower, upper) + border)
+    def random_interval(lower, upper, size, border_bias = 0):
+        max_size = upper - lower
 
-def random_region(image_size, crop_size, border = 0):
-    w, h = image_size
-    tw, th = crop_size
+        if size < max_size:
+            pos = random.uniform(lower - border_bias, upper - size + border_bias)
+            pos = clamp(lower, upper - size)
 
-    x = random_check(0, w - tw, border)
-    y = random_check(0, h - th, border)
+            return pos, size
+        else:
+            return lower + border, max_size    
 
-    return (x, y)
+    x, w = random_interval(0, width, crop_width)
+    y, h = random_interval(0, height, crop_height)
 
-def random_crop(dim, border=0):
-    def crop(image):
-        h, w, c = image.size()
-        assert dim[0] + border <= w and dim[1] + border <= h
+    return (x, y), (w, h)
 
-        size = (image.size(1), image.size(0))
-        x, y = random_region(size, dim, border)
-        return image.narrow(0, y, dim[1]).narrow(1, x, dim[0])
-    return crop
 
-def centre_crop(dim):
-    def crop(image):
-        h, w, c = image.size()
-        assert dim[0] <= w and dim[1]  <= h
 
-        pos = ((w - dim[0]) // 2, (h - dim[1]) // 2)
+def random_crop_padded(image_size, crop_size, border_bias = 0):
 
-        return image.narrow(0, pos[1], dim[1]).narrow(1, pos[0], dim[0])
-    return crop
+    def random_offset(lower, upper, size):
+        if size > upper - lower:
+            return random.uniform(upper - size, lower)
+        else:
+            pos = random.uniform(lower - border_bias, upper - size + border_bias)
+            return clamp(lower, upper - size, pos)
+
+    width, height = image_size
+    crop_width, crop_height = crop_size
+
+    x = random_offset(0, width, crop_width)
+    y = random_offset(0, height, crop_height)
+
+    return x, y
 
 
 def clamp(lower, upper, *xs):
@@ -164,6 +180,12 @@ def affine_crop(input_crop, dest_size, scale_range=(1, 1), rotation_size=0, bord
         t = make_affine_crop(image.size(), input_crop, dest_size, scale_range, rotation_size)
         return warp_affine(image, t, dest_size, border_mode=border_mode, border_fill=border_fill)
     return f
+
+def centre_on(image, dest_size, border_mode=border.constant, border_fill=(0, 0, 0)):
+    h, w, c = image.size()
+    
+    t = translation((w - dim[0]) / 2, (h - dim[1]) / 2)
+    return warp_affine(image, t, dest_size, border_mode=border_mode, border_fill=border_fill)
 
 
 def image_augmentation(dest_size, affine_jitter=0, perspective_jitter=0, translation=0, scale_range=(1, 1), rotation_size=0, flip=True, border_mode=border.constant, border_fill=default_statistics.mean):

@@ -1,4 +1,4 @@
-from tools import Struct
+from tools import struct
 import argparse
 
 import shlex
@@ -22,15 +22,15 @@ def default_parameters(parameters):
 
     for name, param in parameters.items():
         if param.type == 'choice':
-            defaults[name] = Struct(choice = param.default, parameters = default_parameters(param.options[param.default]))
+            defaults[name] = struct(choice = param.default, parameters = default_parameters(param.options[param.default]))
         else:
             defaults[name] = param.default
 
-    return Struct(**defaults)
+    return struct(**defaults)
 
 
 def make_parser(description, parameters):
-    assert type(description) is str and type(parameters) is Struct
+    assert type(description) is str and type(parameters) is struct
 
     parser = argparse.ArgumentParser(description=description)
     return add_arguments(parser, parameters)
@@ -41,7 +41,7 @@ def parse_args(parameters, name, description, cmdArgs=None):
     add_arguments(parser, parameters)
 
     args = parser.parse_args(cmdArgs)
-    return Struct(**args.__dict__)
+    return struct(**args.__dict__)
 
 
 def get_choice(choice):
@@ -55,7 +55,7 @@ def parse_choice(name, choice, args):
     choices = list(choice.options.keys())
     assert option in choice.options, "option '" + option + "' missing, expected one of " + str(choices)
     args = parse_args(choice.options[option], name + "." + option, choice.help, cmdArgs)
-    return Struct (choice = option, parameters = args)
+    return struct (choice = option, parameters = args)
 
 
 def param_type(value):
@@ -63,17 +63,17 @@ def param_type(value):
 
 def param(default=None, help='', type=None, required=False):
     assert default is not None or type is not None, "type parameter required if default is not provided"
-    return Struct (default=default, required=required,  help=help, type=type or param_type(default))
+    return struct (default=default, required=required,  help=help, type=type or param_type(default))
 
 def required(type, help=''):
-    return Struct (default=None, required=True, help=help, type=type)
+    return struct (default=None, required=True, help=help, type=type)
 
 def choice(default, options, help='', required=False):
-    return Struct (default=default, options=options, help=help, type='choice', required=required)
+    return struct (default=default, options=options, help=help, type='choice', required=required)
 
 
 def group(title, **parameters):
-    return Struct(title=title, type='group', parameters=Struct(**parameters))
+    return struct(title=title, type='group', parameters=struct(**parameters))
 
 
 def add_arguments(parser, parameters):

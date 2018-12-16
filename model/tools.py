@@ -5,7 +5,7 @@ import torch.nn as nn
 
 import argparse
 
-from tools import Struct
+from tools import struct
 from tools.parameters import add_arguments, default_parameters
 
 def create(models, model_args, dataset_args):

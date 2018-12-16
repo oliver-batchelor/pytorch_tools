@@ -4,7 +4,7 @@ import cv2
 import torch
 
 import numpy as np
-from tools import Struct
+from tools import struct
 
 
 def _rgb_bgr(cv_image):
@@ -118,6 +118,13 @@ def resize(image, dim, **kwargs):
     result = torch.from_numpy(cv2.resize(image.numpy(), dim, **kwargs))
     return result.view(dim[1], dim[0], channels)
 
+def flip_horizontal(image):
+    return torch.from_numpy(cv2.flip(image.numpy(), 1))
+
+def flip_vertical(image):
+    return torch.from_numpy(cv2.flip(image.numpy(), 0))
+
+
 def int_list(p):
     if type(p) is tuple:
         return p
@@ -127,7 +134,7 @@ def int_list(p):
         assert false, "could not convert to tuple: " + torch.typename(p)
 
 
-line_type = Struct (
+line_type = struct (
     filled = cv2.FILLED,
     line4 = cv2.LINE_4,
     line8 = cv2.LINE_8,
@@ -156,16 +163,16 @@ def putText(image, text, pos, scale=1, color=(255, 255, 255, 255), thickness=1, 
     return torch.from_numpy(image)
 
 
-inter = Struct(cubic = cv2.INTER_CUBIC, nearest = cv2.INTER_NEAREST, area = cv2.INTER_AREA)
+inter = struct(cubic = cv2.INTER_CUBIC, nearest = cv2.INTER_NEAREST, area = cv2.INTER_AREA)
 
-border = Struct(
+border = struct(
     replicate=cv2.BORDER_REPLICATE,
     wrap=cv2.BORDER_REPLICATE,
     constant=cv2.BORDER_CONSTANT,
     reflect=cv2.BORDER_REFLECT
 )
 
-image_read = Struct(
+image_read = struct(
     unchanged=cv2.IMREAD_UNCHANGED,
     color=cv2.IMREAD_COLOR,
     greyscale=cv2.IMREAD_GRAYSCALE
