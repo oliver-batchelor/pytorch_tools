@@ -1,10 +1,13 @@
 
+from tools import struct
+
 import sys
 import cv2
 import torch
 
 import numpy as np
 from tools import struct
+
 
 
 def _rgb_bgr(cv_image):
@@ -17,17 +20,48 @@ def _bgr_rgb(cv_image):
         cv_image = cv2.cvtColor(cv_image, cv2.COLOR_RGB2BGR)
     return cv_image
 
-def imread(path, flag=cv2.IMREAD_UNCHANGED):
-    cv_image = cv2.imread(path, flag)
-    assert cv_image is not None, "imread: failed to load " + str(path)
+def convert_loaded(cv_image):
     cv_image = _bgr_rgb(cv_image)
-
     image = torch.from_numpy (cv_image)
 
     if(image.dim() == 2):
         image = image.view(*image.size(), 1)
-
     return image
+
+
+def video_capture(path):
+    cap = cv2.VideoCapture(path)
+
+    def frames(start = 0):
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start)
+
+        while(cap.isOpened()):
+            ret, frame = cap.read()
+            if ret:
+                yield convert_loaded(frame)
+            else:
+                raise StopIteration
+
+
+        raise StopIteration
+
+
+    if cap.isOpened():
+        return frames, struct(
+            fps = cap.get(cv2.CAP_PROP_FPS),
+            size = (cap.get(cv2.CAP_PROP_FRAME_WIDTH), cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
+        )
+
+    assert false, "video_capture: failed to load " + str(path)
+
+
+
+def imread(path, flag=cv2.IMREAD_UNCHANGED):
+    cv_image = cv2.imread(path, flag)
+    assert cv_image is not None, "imread: failed to load " + str(path)
+
+    return convert_loaded(cv_image)
 
 def imread_color(path):
     image = imread(path, cv2.IMREAD_COLOR)
@@ -53,23 +87,36 @@ def imwrite(path, image):
 
 waitKey = cv2.waitKey
 
-def display(t):
-    imshow("image", t)
+def display(t, name="image"):
+    # cv2.namedWindow(name, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED)
+    cv2.namedWindow(name)
+
+    imshow(t, name="name")
     return waitKey()
 
-def imshow(name, t):
+def imshow(t, name="image"):
     cv2.imshow(name, _rgb_bgr(t.numpy()))
     waitKey(1)
 
 
-def display_bgr(t):
-    imshow_bgr("image", t)
-    return waitKey()
+# def display_bgr(t):
+#     imshow_bgr("image", t)
+#     return waitKey()
 
-def imshow_bgr(name, t):
-    cv2.imshow(name, t.numpy())
-    waitKey(1)
+# def imshow_bgr(name, t):
+#     cv2.imshow(name, t.numpy())
+#     waitKey(1)
 
+
+
+
+
+def multiply_add(image, a, b):
+    i = image.numpy()
+    return torch.from_numpy(cv2.addWeighted(i, a, i, 0, b))
+
+def add(image, b):
+    return torch.from_numpy(cv2.add(image.numpy(), b))
 
 
 def adjust_gamma(image, gamma=1.0):
@@ -93,6 +140,16 @@ def bgr_to_rgb(image):
 
 def rgb_to_bgr(image):
     return cvtColor(image, cv2.COLOR_RGB2BGR)
+
+
+def rgb_to_hsv(image):
+    return cvtColor(image, cv2.COLOR_RGB2HSV)
+
+def hsv_to_rgb(image):
+    return cvtColor(image, cv2.COLOR_HSV2RGB)
+
+
+
 
 def warpAffine(image, t, target_size, **kwargs):
     t = t.narrow(0, 0, 2)

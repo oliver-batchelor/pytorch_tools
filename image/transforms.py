@@ -48,15 +48,31 @@ def adjust_gamma(adjustment=0.1, per_channel=0):
         return image
     return f
 
+
 def adjust_brightness(brightness = 0, contrast = 0):
     def f(image):
+        
         b = random.uniform(-brightness, brightness) * 255
         c = random.uniform(1 - contrast, 1 + contrast)
 
-        image = image.float().add_(b).mul_(c).clamp_(0, 255).byte()
-        return image
+        return cv.multiply_add(image, c, b)
     return f    
 
+def adjust_colours(hue=0.0, saturation=0.0):
+    def f(image):
+        
+        h = random.uniform(-hue, hue) * 180
+        s = random.uniform(-saturation, saturation) * 255
+
+        image = cv.rgb_to_hsv(image)
+        hues = image.select(2, 0).float().add_(h).fmod_(180).byte()
+        saturations = cv.add(image.select(2, 1), s)
+
+        image.select(2, 0).copy_(hues)
+        image.select(2, 1).copy_(saturations)
+
+        return cv.hsv_to_rgb(image)
+    return f    
 
 
 def scaling(sx, sy):
@@ -103,22 +119,39 @@ def random_crop(image_size, crop_size, border_bias = 0):
 
 
 
-def random_crop_padded(image_size, crop_size, border_bias = 0):
+def random_crop_target(image_size, crop_size, target_box):
+    (l, u) = target_box
 
-    def random_offset(lower, upper, size):
+    def random_offset(i):
+        size = crop_size[i]
+        lower = max(0, u[i] - size)
+        upper = min(l[i] + size, image_size[i])
+
         if size > upper - lower:
             return random.uniform(upper - size, lower)
         else:
-            pos = random.uniform(lower - border_bias, upper - size + border_bias)
+            pos = random.uniform(lower, upper - size)
+            return clamp(lower, upper - size, pos)
+      
+    return (random_offset(0), random_offset(1))
+
+
+def random_crop_padded(image_size, crop_size, border_bias = 0):
+
+    def random_offset(i):
+        lower = 0
+        upper = image_size[i]
+        size = crop_size[i]
+
+        bias = border_bias * image_size[i]
+
+        if size > upper - lower:
+            return random.uniform(upper - size, lower)
+        else:
+            pos = random.uniform(lower - bias, upper - size + bias)
             return clamp(lower, upper - size, pos)
 
-    width, height = image_size
-    crop_width, crop_height = crop_size
-
-    x = random_offset(0, width, crop_width)
-    y = random_offset(0, height, crop_height)
-
-    return x, y
+    return (random_offset(0), random_offset(1))
 
 
 def clamp(lower, upper, *xs):
@@ -139,14 +172,10 @@ def compose(*functions):
 
 border = cv.border
 
-def warp_affine(image, t, dest_size, border_mode=border.constant, border_fill=default_statistics.mean):
-    border_fill  = [255 * x for x in border_fill]
-    return cv.warpAffine(image, t, dest_size, flags = cv.inter.area, borderMode=border_mode, borderValue = border_fill)
 
-
-def warp_affine(image, t, dest_size, border_mode=border.constant, border_fill=default_statistics.mean):
+def warp_affine(image, t, dest_size, border_mode=border.constant, border_fill=default_statistics.mean, flags=cv.inter.area):
     border_fill  = [255 * x for x in border_fill]
-    return cv.warpAffine(image, t, dest_size, flags = cv.inter.area, borderMode=border_mode, borderValue = border_fill)
+    return cv.warpAffine(image, t, dest_size, flags=flags, borderMode=border_mode, borderValue = border_fill)
 
 
 def resize_to(image, dest_size):

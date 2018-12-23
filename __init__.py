@@ -5,6 +5,8 @@ from numbers import Number
 import math
 
 import operator
+import itertools
+
 
 def to_dicts(s):
     if isinstance(s, Struct):
@@ -435,12 +437,18 @@ def cat_tables(tables):
     t = transpose_structs(tables)
     return Table(dict(t._map(torch.cat))) 
 
+def drop_while(f, xs):
+    while(len(xs) > 0 and f(xs[0])):
+        _, *xs = xs    
 
-def filterNone(xs):
+    return xs
+
+
+def filter_none(xs):
     return [x for x in xs if x is not None]
 
-def filterMap(f, xs):
-    return filterNone(map(f, xs))
+def filter_map(f, xs):
+    return filter_none(map(f, xs))
 
 
 def pluck(k, xs):
@@ -451,3 +459,10 @@ def const(x):
     def f(*y):
         return x
     return f
+
+def concat_lists(xs):
+    return list(itertools.chain.from_iterable(xs))
+
+
+def map_dict(f, d):
+    return {k :  f(v) for k, v in d.items()}

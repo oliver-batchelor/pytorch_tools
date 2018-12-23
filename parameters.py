@@ -49,6 +49,8 @@ def get_choice(choice):
 
 
 def parse_choice(name, choice, args):
+    assert args is not None
+    
     tokens = shlex.split(args)
     option, *cmdArgs = tokens
 
