@@ -57,6 +57,20 @@ def video_capture(path):
 
 
 
+def imread_depth(path):
+    cv_image = cv2.imread(path, cv2.IMREAD_UNCHANGED)
+    
+    if cv_image.dtype == np.uint16:
+        cv_image = cv_image.astype(np.float32)
+    else:
+        assert false, "imread_depth - unsupported type {}: {}".format(str(cv_image.dtype), path)
+    
+    image = torch.from_numpy (cv_image)
+    if(image.dim() == 2):
+        image = image.view(*image.size(), 1)
+
+    return image
+
 def imread(path, flag=cv2.IMREAD_UNCHANGED):
     cv_image = cv2.imread(path, flag)
     assert cv_image is not None, "imread: failed to load " + str(path)
@@ -149,6 +163,11 @@ def hsv_to_rgb(image):
     return cvtColor(image, cv2.COLOR_HSV2RGB)
 
 
+def rgb_to_gray(image):
+    return cvtColor(image, cv2.COLOR_RGB2GRAY)
+
+def gray_to_rgb(image):
+    return cvtColor(image, cv2.COLOR_GRAY2RGB)
 
 
 def warpAffine(image, t, target_size, **kwargs):

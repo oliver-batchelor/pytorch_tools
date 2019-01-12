@@ -371,12 +371,23 @@ class Histogram:
             return 0
 
 
+def show_shapes_info(x):
 
+    if type(x) == torch.Tensor:
+        return tuple([*x.size(), x.dtype, x.device])
+    elif type(x) == list:
+        return list(map(show_shapes, x))
+    elif type(x) == tuple:
+        return tuple(map(show_shapes, x))
+    elif isinstance(x, Mapping):
+        return {k : show_shapes(v) for k, v in x.items()}
+    else:
+        return str(x)
 
 def show_shapes(x):
 
     if type(x) == torch.Tensor:
-        return tuple([*x.size(), x.dtype, x.device])
+        return tuple([*x.size()])
     elif type(x) == list:
         return list(map(show_shapes, x))
     elif type(x) == tuple:
