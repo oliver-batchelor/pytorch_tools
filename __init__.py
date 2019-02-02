@@ -228,7 +228,7 @@ class Table(Struct):
       
         for (k, v) in d.items():
             assert type(v) == torch.Tensor, "expected tensor, got " + type(t).__name__
-            assert v.size(0) == t.size(0)
+            assert v.size(0) == t.size(0), "mismatched column sizes: " + str(show_shapes(d))
 
         super(Table, self).__init__(d)
 
@@ -239,7 +239,9 @@ class Table(Struct):
 
     def _index_select(self, index):
         if type(index) is torch.Tensor:
-            assert index.dtype == torch.int64 and index.dim() == 1
+            assert index.dtype == torch.int64 
+            assert index.dim() == 1
+            
             return self._map(lambda t: t[index])
 
         elif type(index) is int:
@@ -376,11 +378,11 @@ def show_shapes_info(x):
     if type(x) == torch.Tensor:
         return tuple([*x.size(), x.dtype, x.device])
     elif type(x) == list:
-        return list(map(show_shapes, x))
+        return list(map(show_shapes_info, x))
     elif type(x) == tuple:
-        return tuple(map(show_shapes, x))
+        return tuple(map(show_shapes_info, x))
     elif isinstance(x, Mapping):
-        return {k : show_shapes(v) for k, v in x.items()}
+        return {k : show_shapes_info(v) for k, v in x.items()}
     else:
         return str(x)
 
@@ -439,6 +441,7 @@ def transpose_structs(structs):
     elem = structs[0]
     d =  {key: [d[key] for d in structs] for key in elem}
     return Struct(d) 
+
 
 
 def transpose_lists(lists):
