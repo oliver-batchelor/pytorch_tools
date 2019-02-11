@@ -7,6 +7,10 @@ import math
 import operator
 import itertools
 
+import pprint
+
+
+
 
 def to_dicts(s):
     if isinstance(s, Struct):
@@ -480,3 +484,7 @@ def concat_lists(xs):
 
 def map_dict(f, d):
     return {k :  f(v) for k, v in d.items()}
+
+def pprint_struct(s, indent=2, width=160):
+    pp = pprint.PrettyPrinter(indent=indent, width=width)
+    pp.pprint(s._to_dicts())
