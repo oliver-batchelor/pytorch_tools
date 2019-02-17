@@ -9,6 +9,8 @@ import itertools
 
 import pprint
 
+from functools import reduce
+
 
 
 
@@ -468,9 +470,11 @@ def filter_none(xs):
 def filter_map(f, xs):
     return filter_none(map(f, xs))
 
-
 def pluck(k, xs):
     return [d[k] for d in xs]
+
+def pluck_struct(k, xs):
+    return xs._map(lambda x: x[k])
 
 
 def const(x):
@@ -488,3 +492,8 @@ def map_dict(f, d):
 def pprint_struct(s, indent=2, width=160):
     pp = pprint.PrettyPrinter(indent=indent, width=width)
     pp.pprint(s._to_dicts())
+
+
+def sum_lists(xs):
+    assert len(xs) > 0
+    return reduce(operator.add, xs)
