@@ -5,10 +5,10 @@ import tensorflow as tf
 import os.path as path
 import os
 
-from tools import Histogram
-from tensorboard.plugins.pr_curve import metadata
+from tools import Histogram, struct, to_dicts, to_structs
 
 import torch
+import json
 import numpy as np
 
 def create_dir(dir):
@@ -39,9 +39,10 @@ def make_experiment(log_path, name, dry_run=False, load=False):
             backup_experiment(log_path, name)
 
         create_dir(output_path)
-            
         print("writing experiment to " + output_path)
-        return output_path, Logger(output_path)
+
+        logger = JsonLogger(path.join(output_path, "log.json"))
+        return output_path, logger
     else:
         return output_path, Null()
 
@@ -56,43 +57,99 @@ def enumerate_name(base, names):
     return name
 
 
-class Null:
+class CompositeLogger:
+    def __init__(self, loggers):
+        self.loggers = loggers
+
+
+    def begin_step(self, step):
+        for logger in self.loggers:
+            logger.begin_step(step)
     
-    def scalar(self, name, value, global_step=None, walltime=None):
-        pass
+    def scalar(self, tag, value):
+        for logger in self.loggers:
+            logger.scalar(tag, value)
 
-    def scalars(self, name, value, global_step=None, walltime=None):
-        pass
+    def scalars(self, tag, value):
+        for logger in self.loggers:
+            logger.scalars(tag, value)
 
-    def flush():
-        pass
+    def pr_curve(self, tag, curve):
+        for logger in self.loggers:
+            logger.pr_curve(tag, curve)
+
+    def histogram(self, tag, histogram):
+        for logger in self.loggers:
+            logger.histogram(tag, histogram)
+
+    def flush_step():
+       for logger in self.loggers:
+            logger.flush_step()
 
 
+class JsonLogger:
+    def __init__(self, log_file):
+        self.step = None
+
+        self.log_file = log_file
+        self.entries = {}   
+
+    def begin_step(self, step):
+        if self.step is not None:
+            self.flush_step()
+
+        self.step = struct (
+            step=step,
+            begin=time.time(),
+            entries = {}
+        )
 
 
-class Logger:
+    def flush_step(self):
+        assert self.step is not None
+
+        t = time.time()
+        step = self.step._extend(end = t, duration = t - self.step.begin)
+
+        data = json.dumps(to_dicts(self.step))
+        with open(self.log_file, "a") as file:
+            file.write(data + '\n')        
+
+        self.step = None
+
+    def scalar(self, tag, value):
+        self.append_entry(tag, value)
+
+
+    def scalars(self, tag, value_dict):
+        self.append_entry(tag, value_dict)
+                    
+    def pr_curve(self, tag, curve):
+        self.append_entry(tag, curve)
+
+    def histogram(self, tag, histogram):
+        assert isinstance(histogram, Histogram)
+        self.append_entry(tag, histogram.to_struct())
+
+    # Internal
+    def append_entry(self, tag, value):    
+        assert tag not in self.step.entries
+        self.step.entries[tag] = value
+
+
+class TensorflowLogger:
     def __init__(self, log_dir):
         self.writers = {None : tf.summary.FileWriter(log_dir)}
         self.log_dir = log_dir
-
         self.step = 0
 
-    def set_step(self, step):
-
+    def begin_step(self, step):
         self.step = step
 
-    def writer(self, run = None):       
-        if not (run in self.writers):
-            self.writers[run] = tf.summary.FileWriter(path.join(self.log_dir, run))
 
-        return self.writers[run]
-
-    def flush(self):
+    def flush_step(self):
         for writer in self.writers.values():
             writer.flush()
-
-    def add_summary(self, summary, run = None):
-        self.writer(run).add_summary(summary, global_step = self.step)
 
     def scalar(self, tag, value, run = None):
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag,  simple_value=value)])
@@ -100,25 +157,28 @@ class Logger:
 
     def scalars(self, tag, value_dict):
         for run, value in value_dict.items():
-            self.scalar(tag, value, run=run)
-            
+            summary = tf.Summary(value=[tf.Summary.Value(tag=tag,  simple_value=value)])
+            self.writer(run=run).add_summary(summary, self.step)
 
-    def pr_curve(self, tag, curve, run=None):
+        append_entry
+                    
+    def pr_curve(self, tag, curve):
+        pass
 
-        summary_metadata = metadata.create_summary_metadata(display_name=tag, description='', num_thresholds=curve.precision.size(0))
-        summary = tf.Summary()
+        # summary_metadata = metadata.create_summary_metadata(display_name=tag, description='', num_thresholds=curve.precision.size(0))
+        # summary = tf.Summary()
 
-        data = torch.stack([curve.true_positives, curve.false_positives, 
-            curve.true_negatives, curve.false_negatives, 
-            curve.precision, curve.recall])
+        # data = torch.stack([curve.true_positives, curve.false_positives, 
+        #     curve.true_negatives, curve.false_negatives, 
+        #     curve.precision, curve.recall])
 
-        tensor = tf.make_tensor_proto(np.float32(data.numpy()), dtype=tf.float32)
-        summary.value.add(tag=tag, metadata=summary_metadata, tensor=tensor)         
+        # tensor = tf.make_tensor_proto(np.float32(data.numpy()), dtype=tf.float32)
+        # summary.value.add(tag=tag, metadata=summary_metadata, tensor=tensor)         
 
-        self.add_summary(summary, run=run)
+        # self.add_summary(summary, run=run)
 
 
-    def histogram(self, tag, histogram, run=None):
+    def histogram(self, tag, histogram):
         assert isinstance(histogram, Histogram)
         # """Logs the histogram of a list/vector of values."""
 
@@ -144,6 +204,15 @@ class Logger:
             hist.bucket.append(c)
 
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, histo=hist)])
-        self.add_summary(summary, run = run)
+        self.add_summary(summary)
 
 
+    # Internal
+    def writer(self, run = None):       
+        if not (run in self.writers):
+            self.writers[run] = tf.summary.FileWriter(path.join(self.log_dir, str(run)))
+
+        return self.writers[run]
+
+    def add_summary(self, summary, run = None):
+        self.writer(run).add_summary(summary, global_step = self.step)

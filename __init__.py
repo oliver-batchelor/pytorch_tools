@@ -1,6 +1,8 @@
 from collections import Counter
 from collections.abc import Mapping
 import torch
+from torch import Tensor
+
 from numbers import Number
 import math
 
@@ -13,7 +15,6 @@ from functools import reduce
 
 
 
-
 def to_dicts(s):
     if isinstance(s, Struct):
         return {k:to_dicts(v) for k, v in s.__dict__.items()}
@@ -23,6 +24,8 @@ def to_dicts(s):
         return [to_dicts(v) for v in s]        
     if isinstance(s, tuple):
         return tuple(to_dicts(v) for v in s)
+    if isinstance(s, Tensor):
+        return s.tolist()
     else:
         return s
 
@@ -335,6 +338,8 @@ class Histogram:
 
         return torch.FloatTensor([lower + i * d for i in range(0, self.counts.size(0) + 1)])
 
+    def to_struct(self):
+        return struct(sum=self.sum, sum_squares=self.sum_squares, counts=self.counts)
 
     def __add__(self, other):
         assert isinstance(other, Histogram)
