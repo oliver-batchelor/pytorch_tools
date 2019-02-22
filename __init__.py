@@ -502,3 +502,42 @@ def pprint_struct(s, indent=2, width=160):
 def sum_lists(xs):
     assert len(xs) > 0
     return reduce(operator.add, xs)
+
+
+def append_dict(d, k, v):
+    xs = d.get(k) or []
+    xs.append(v)
+
+    d[k] = xs
+    return d
+
+
+def transpose_dicts(d):
+    r = {}
+    for k, v in d.items():
+        for j, u in v.items():
+            inner = r.get(j) or {}
+            inner[k] = u
+            r[j] = inner
+    return r    
+
+def add_dict(d, k):
+    d[k] = d[k] + 1 if k in d else 1
+    return d
+
+
+def count_dict(xs):
+    counts = {}
+    for k in xs:
+        add_dict(counts, k)
+
+    return counts
+
+def partition_by(xs, f):
+    partitions = {}
+
+    for x in xs:
+        k, v = f(x)
+        append_dict(partitions, k, v)    
+
+    return partitions
