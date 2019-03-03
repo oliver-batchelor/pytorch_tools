@@ -125,7 +125,6 @@ class JsonLogger:
         self.append_entry(tag, value_dict, step)
                     
     def pr_curve(self, tag, curve, step):
-        print(tag)
         self.append_entry(tag, curve, step)
 
     def histogram(self, tag, histogram, step):

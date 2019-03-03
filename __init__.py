@@ -499,7 +499,7 @@ def pprint_struct(s, indent=2, width=160):
     pp.pprint(s._to_dicts())
 
 
-def sum_lists(xs):
+def sum_list(xs):
     assert len(xs) > 0
     return reduce(operator.add, xs)
 
