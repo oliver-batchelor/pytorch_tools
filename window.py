@@ -20,6 +20,10 @@ def rolling_window(xs, window=5):
 def rolling_diff(xs, window=5):
     means = rolling_window(xs, window=window).mean(1)
     return (xs - means).abs()
+
+def rolling_mean(xs, window=5):
+    return rolling_window(xs, window=window).mean(1)
+
     
 def masked_mean(xs, mask, window=5, clamp=True):
     xs = xs.clone().masked_fill_(~mask, 0)

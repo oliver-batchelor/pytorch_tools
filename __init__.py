@@ -475,11 +475,11 @@ def filter_none(xs):
 def filter_map(f, xs):
     return filter_none(map(f, xs))
 
-def pluck(k, xs):
-    return [d[k] for d in xs]
+def pluck(k, xs, default=None):
+    return [d.get(k, default) for d in xs]
 
-def pluck_struct(k, xs):
-    return xs._map(lambda x: x[k])
+def pluck_struct(k, xs, default=None):
+    return xs._map(lambda x: x.get(k, default))
 
 
 def const(x):
