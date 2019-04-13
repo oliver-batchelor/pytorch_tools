@@ -75,6 +75,10 @@ class Struct(Mapping):
         d = {k:self[k] for k in keys}
         return self.__class__(d)
 
+    def _filter_none(self):
+        return self.__class__({k: v for k, v in self.items() if v is not None})
+
+
     def _map(self, f, *args, **kwargs):
         return self.__class__({k: f(v, *args, **kwargs) for k, v in self.items()})
 
@@ -532,6 +536,16 @@ def count_dict(xs):
         add_dict(counts, k)
 
     return counts
+
+def sum_dicts(ds):
+    r = {}
+
+    for d in ds:
+        for k, v in d.items():
+            r[k] = r.get(k, 0) + v
+
+    return r
+
 
 def partition_by(xs, f):
     partitions = {}

@@ -47,7 +47,7 @@ def make_experiment(log_path, name, dry_run=False, load=False):
 
         return output_path, logger
     else:
-        return output_path, Null()
+        return output_path, NullLogger()
 
 
 def enumerate_name(base, names):
@@ -58,6 +58,27 @@ def enumerate_name(base, names):
         i = i + 1
 
     return name
+
+class NullLogger:
+    def __init__(self):
+        pass
+
+
+    def scalar(self, tag, value):
+        pass
+
+    def scalars(self, tag, value):
+        pass
+
+    def pr_curve(self, tag, curve):
+        pass
+
+    def histogram(self, tag, histogram):
+        pass  
+
+    def flush(self):
+        pass
+
 
 class EpochLogger:
     def __init__(self, logger, step):
