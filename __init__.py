@@ -75,6 +75,10 @@ class Struct(Mapping):
         d = {k:self[k] for k in keys}
         return self.__class__(d)
 
+    def _without(self, *keys):
+        d = {k:v for k, v in self.items() if not (k in keys)}
+        return self.__class__(d)
+
     def _filter_none(self):
         return self.__class__({k: v for k, v in self.items() if v is not None})
 
@@ -123,7 +127,7 @@ class Struct(Mapping):
 
     def _zipWith(self, f, other):
         assert isinstance(other, Struct)
-        assert self.keys() == other.keys()
+        assert self.keys() == other.keys(), str(self.keys()) + " vs. " + str(other.keys())
 
         r = {k:f(self[k], other[k]) for k in self.keys()}
         return self.__class__(r)
