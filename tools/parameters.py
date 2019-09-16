@@ -1,4 +1,4 @@
-from tools import struct
+from tools import struct, Struct
 import argparse
 
 import shlex
@@ -30,7 +30,7 @@ def default_parameters(parameters):
 
 
 def make_parser(description, parameters):
-    assert type(description) is str and type(parameters) is struct
+    assert type(description) is str and type(parameters) is Struct
 
     parser = argparse.ArgumentParser(description=description)
     return add_arguments(parser, parameters)
