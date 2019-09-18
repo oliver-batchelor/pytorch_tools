@@ -105,7 +105,7 @@ def display(t, name="image"):
     # cv2.namedWindow(name, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED)
     cv2.namedWindow(name)
 
-    imshow(t, name="name")
+    imshow(t, name=name)
     return waitKey()
 
 def imshow(t, name="image"):
