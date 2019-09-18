@@ -102,11 +102,16 @@ def imwrite(path, image):
 waitKey = cv2.waitKey
 
 def display(t, name="image"):
-    # cv2.namedWindow(name, cv2.WINDOW_NORMAL | cv2.WINDOW_KEEPRATIO | cv2.WINDOW_GUI_EXPANDED)
     cv2.namedWindow(name)
 
     imshow(t, name=name)
-    return waitKey()
+
+    while cv2.getWindowProperty(name, cv2.WND_PROP_VISIBLE) > 0:
+        keyCode = waitKey(10)
+        if keyCode >= 0:
+            return keyCode
+
+    return -1
 
 def imshow(t, name="image"):
     cv2.imshow(name, _rgb_bgr(t.numpy()))
