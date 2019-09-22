@@ -269,6 +269,7 @@ class Table(Struct):
     def _narrow(self, start, n):
         return self._map(lambda t: t.narrow(0, start, n))
 
+
     def _take(self, n):
         return self._narrow(0, min(self._size, n))
 
@@ -460,6 +461,15 @@ def transpose_structs(structs):
     elem = structs[0]
     d =  {key: [d[key] for d in structs] for key in elem}
     return Struct(d) 
+
+
+def split_table(table, splits):
+    split = {k: v.split(splits) for k, v in table.items()}
+
+    def build_table(i):
+        return Table({k : v[i] for k, v in split.items()})
+
+    return [build_table(i) for i in range(len(splits))]
 
 
 

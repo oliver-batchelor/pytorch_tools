@@ -225,7 +225,7 @@ line_type = struct (
 
 
 def rectangle(image, lower, upper, color=(255, 255, 255, 255), thickness=1, line=line_type.lineAA):
-
+    assert image.is_contiguous()
 
     image = image.numpy()
     cv2.rectangle(image, int_list(lower), int_list(upper), color=int_list(color), thickness=int(thickness), lineType = line)
@@ -237,6 +237,8 @@ def rectangle(image, lower, upper, color=(255, 255, 255, 255), thickness=1, line
 
 
 def putText(image, text, pos, scale=1, color=(255, 255, 255, 255), thickness=1, line=line_type.lineAA):
+    assert image.is_contiguous()
+
     image = image.numpy()
 
     cv2.putText(image, str(text), int_list(pos), fontFace=1, fontScale=scale, color=int_list(color), thickness=int(thickness), lineType = line)
