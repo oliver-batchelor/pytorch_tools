@@ -476,9 +476,15 @@ def split_table(table, splits):
 def transpose_lists(lists):
     return list(zip(*lists))
 
-def cat_tables(tables):
+
+def stack_tables(tables, dim=0):
     t = transpose_structs(tables)
-    return Table(dict(t._map(torch.cat))) 
+    return Table(dict(t._map(torch.stack, dim=dim))) 
+
+def cat_tables(tables, dim=0):
+    t = transpose_structs(tables)
+    return Table(dict(t._map(torch.cat, dim=dim))) 
+
 
 def drop_while(f, xs):
     while(len(xs) > 0 and f(xs[0])):
