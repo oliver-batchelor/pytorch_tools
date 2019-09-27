@@ -420,6 +420,28 @@ def show_shapes(x):
         return str(x)
 
 
+
+def apply_tensors(t, f, *args, **kwargs):
+
+    def rec(x):
+        if type(x) == torch.Tensor:
+            return f(x, *args, **kwargs)
+        elif type(x) == list:
+            return list(map(rec, x))
+        elif type(x) == tuple:
+            return tuple(map(rec, x))
+        elif isinstance(x, Mapping):
+            return x.__class__({k : rec(v) for k, v in x.items()})
+        else:
+            return x
+
+    return rec(t)
+
+
+
+def tensors_to(t, **kwargs):
+    return apply_tensors(t, Tensor.to, **kwargs)
+
 def get_default_args(func):
     """
     returns a dictionary of arg_name:default_values for the input function
