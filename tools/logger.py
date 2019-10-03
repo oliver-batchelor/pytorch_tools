@@ -184,8 +184,8 @@ class TensorboardLogger:
         # summary_metadata = metadata.create_summary_metadata(display_name=tag, description='', num_thresholds=curve.precision.size(0))
         # summary = tf.Summary()
 
-        # data = torch.stack([curve.true_positives, curve.false_positives, 
-        #     curve.true_negatives, curve.false_negatives, 
+        # data = torch.stack([curve.true_positives, curve.False_positives, 
+        #     curve.true_negatives, curve.False_negatives, 
         #     curve.precision, curve.recall])
 
         # tensor = tf.make_tensor_proto(np.float32(data.numpy()), dtype=tf.float32)

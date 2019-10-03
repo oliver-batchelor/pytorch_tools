@@ -89,7 +89,7 @@ def add_arguments(parser, parameters):
         elif name == 'float':
             return float
         else:
-            assert false, "unknown type: " + name
+            assert False, "unknown type: " + name
 
 
     for name, parameter in parameters.items():

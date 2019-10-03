@@ -53,7 +53,7 @@ def video_capture(path):
             frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         )
 
-    assert false, "video_capture: failed to load " + str(path)
+    assert False, "video_capture: failed to load " + str(path)
 
 
 
@@ -63,7 +63,7 @@ def imread_depth(path):
     if cv_image.dtype == np.uint16:
         cv_image = cv_image.astype(np.float32)
     else:
-        assert false, "imread_depth - unsupported type {}: {}".format(str(cv_image.dtype), path)
+        assert False, "imread_depth - unsupported type {}: {}".format(str(cv_image.dtype), path)
     
     image = torch.from_numpy (cv_image)
     if(image.dim() == 2):
@@ -207,12 +207,10 @@ def flip_vertical(image):
 
 
 def int_list(p):
-    if type(p) is tuple:
-        return p
-    elif type(p) is torch.Tensor:
+    if type(p) is torch.Tensor:
         return tuple(p.int().tolist())
     else:
-        assert false, "could not convert to tuple: " + torch.typename(p)
+        return tuple(p)
 
 
 line_type = struct (
