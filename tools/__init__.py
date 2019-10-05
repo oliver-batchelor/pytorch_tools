@@ -245,7 +245,7 @@ class Table(Struct):
       
         for (k, v) in d.items():
             assert type(v) == torch.Tensor, "expected tensor, got " + type(t).__name__
-            assert v.size(0) == t.size(0), "mismatched column sizes: " + str(show_shapes(d))
+            assert v.size(0) == t.size(0), "mismatched column sizes: " + str(shape(d))
 
         super(Table, self).__init__(d)
 
@@ -393,35 +393,35 @@ class Histogram:
             return 0
 
 
-def show_shapes_info(x):
+def shape_info(x):
 
     if type(x) == torch.Tensor:
         return tuple([*x.size(), x.dtype, x.device])
     elif type(x) == list:
-        return list(map(show_shapes_info, x))
+        return list(map(shape_info, x))
     elif type(x) == tuple:
-        return tuple(map(show_shapes_info, x))
+        return tuple(map(shape_info, x))
     elif isinstance(x, Mapping):
-        return {k : show_shapes_info(v) for k, v in x.items()}
+        return {k : shape_info(v) for k, v in x.items()}
     else:
-        return str(x)
+        return x
 
-def show_shapes(x):
+def shape(x):
 
     if type(x) == torch.Tensor:
         return tuple([*x.size()])
     elif type(x) == list:
-        return list(map(show_shapes, x))
+        return list(map(shape, x))
     elif type(x) == tuple:
-        return tuple(map(show_shapes, x))
+        return tuple(map(shape, x))
     elif isinstance(x, Mapping):
-        return {k : show_shapes(v) for k, v in x.items()}
+        return {k : shape(v) for k, v in x.items()}
     else:
-        return str(x)
+        return x
 
 
 
-def apply_tensors(t, f, *args, **kwargs):
+def map_tensors(t, f, *args, **kwargs):
 
     def rec(x):
         if type(x) == torch.Tensor:
@@ -437,10 +437,8 @@ def apply_tensors(t, f, *args, **kwargs):
 
     return rec(t)
 
-
-
 def tensors_to(t, **kwargs):
-    return apply_tensors(t, Tensor.to, **kwargs)
+    return map_tensors(t, Tensor.to, **kwargs)
 
 def get_default_args(func):
     """

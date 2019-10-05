@@ -221,6 +221,20 @@ line_type = struct (
 )
 
 
+def blend_over(dest, src):
+    dh, dw, dc = dest.shape
+    sh, sw, sc = src.shape
+
+    assert dc == 3 and sc == 4
+
+    if [sh, sw] != [dh, dw]:
+        src = cv.resize(src, (dw, dh))
+
+    alpha = src.select(2, sc - 1)
+    color = src.narrow(2, sc - 1, 1)
+
+    return dest * (1 - alpha) + color * alpha  
+
 
 def rectangle(image, lower, upper, color=(255, 255, 255, 255), thickness=1, line=line_type.lineAA):
     assert image.is_contiguous()
