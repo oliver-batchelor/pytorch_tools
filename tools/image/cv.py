@@ -9,6 +9,28 @@ import numpy as np
 from tools import struct
 
 
+line_type = struct (
+    filled = cv2.FILLED,
+    line4 = cv2.LINE_4,
+    line8 = cv2.LINE_8,
+    lineAA = cv2.LINE_AA
+)
+
+inter = struct(cubic = cv2.INTER_CUBIC, nearest = cv2.INTER_NEAREST, area = cv2.INTER_AREA)
+
+border = struct(
+    replicate=cv2.BORDER_REPLICATE,
+    wrap=cv2.BORDER_REPLICATE,
+    constant=cv2.BORDER_CONSTANT,
+    reflect=cv2.BORDER_REFLECT
+)
+
+image_read = struct(
+    unchanged=cv2.IMREAD_UNCHANGED,
+    color=cv2.IMREAD_COLOR,
+    greyscale=cv2.IMREAD_GRAYSCALE
+)
+
 
 def _rgb_bgr(cv_image):
     if(len(cv_image.shape) == 3 and cv_image.shape[2] == 3):
@@ -213,27 +235,22 @@ def int_list(p):
         return tuple(p)
 
 
-line_type = struct (
-    filled = cv2.FILLED,
-    line4 = cv2.LINE_4,
-    line8 = cv2.LINE_8,
-    lineAA = cv2.LINE_AA
-)
-
-
-def blend_over(dest, src):
+def blend_over(dest, src, interpolation=inter.nearest):
     dh, dw, dc = dest.shape
     sh, sw, sc = src.shape
 
     assert dc == 3 and sc == 4
 
     if [sh, sw] != [dh, dw]:
-        src = cv.resize(src, (dw, dh))
+        src = resize(src.cpu(), (dw, dh), interpolation=interpolation)
 
-    alpha = src.select(2, sc - 1)
-    color = src.narrow(2, sc - 1, 1)
+    alpha = src.select(2, sc - 1).unsqueeze(2)
+    colour = src.narrow(2, 0, 3)
 
-    return dest * (1 - alpha) + color * alpha  
+    if dest.dtype is torch.uint8:
+        return (dest.float() * (1 - alpha) + colour * 255 * alpha).clamp_(0, 255).type(torch.uint8)
+    else:
+        return dest * (1 - alpha) + colour * 255 * alpha
 
 
 def rectangle(image, lower, upper, color=(255, 255, 255, 255), thickness=1, line=line_type.lineAA):
@@ -258,17 +275,4 @@ def putText(image, text, pos, scale=1, color=(255, 255, 255, 255), thickness=1, 
     return torch.from_numpy(image)
 
 
-inter = struct(cubic = cv2.INTER_CUBIC, nearest = cv2.INTER_NEAREST, area = cv2.INTER_AREA)
 
-border = struct(
-    replicate=cv2.BORDER_REPLICATE,
-    wrap=cv2.BORDER_REPLICATE,
-    constant=cv2.BORDER_CONSTANT,
-    reflect=cv2.BORDER_REFLECT
-)
-
-image_read = struct(
-    unchanged=cv2.IMREAD_UNCHANGED,
-    color=cv2.IMREAD_COLOR,
-    greyscale=cv2.IMREAD_GRAYSCALE
-)
