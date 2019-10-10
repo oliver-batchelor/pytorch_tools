@@ -479,7 +479,7 @@ def transpose_partial_structs(structs):
 
 def transpose_structs(structs):
     elem = structs[0]
-    d =  {key: [d[key] for d in structs] for key in elem}
+    d =  {key: [d[key] for d in structs] for key in elem.keys()}
     return Struct(d) 
 
 
