@@ -50,9 +50,6 @@ class Struct(Mapping):
     def __getitem__(self, index):
         return self.__dict__[index]
 
-    def __iter__(self):
-        return self.__dict__.__iter__()
-
     def items(self):
         return self.__dict__.items()
 
