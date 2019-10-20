@@ -9,14 +9,25 @@ import random
 
 default_statistics = struct(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 
-def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std):
+
+class Normalize(nn.Module):
+    def __init__(self, mean=default_statistics.mean, std=default_statistics.std, dtype=float):
+       super().__init__()
+       self.mean = mean
+       self.std = std        
+
+    def forward(self, batch):
+        return (batch - self.mean).div_(self.std).permute(0, 3, 1, 2)
+
+
+def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std, dtype=float):
     assert(batch.size(3) == 3)
-    batch = batch.float().div_(255)
+    batch = batch.to(dtype=dtype).div_(255.)
 
-    for i in range(0, 3):
-        batch.select(3, i).sub_(mean[i]).div_(std[i])
+    mean = batch.new_tensor(mean)
+    std = batch.new_tensor(mean)    
 
-    return batch.permute(0, 3, 1, 2)
+    return (batch - mean).div_(std).permute(0, 3, 1, 2)
 
 
 
