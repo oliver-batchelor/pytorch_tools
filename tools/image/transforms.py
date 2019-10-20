@@ -9,10 +9,8 @@ from tools import struct
 import random
 
 default_statistics = struct(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-
-
 class Normalize(nn.Module):
-    def __init__(self, mean=default_statistics.mean, std=default_statistics.std, dtype=float):
+    def __init__(self, mean=default_statistics.mean, std=default_statistics.std, dtype=torch.float):
        super().__init__()
        self.mean = mean
        self.std = std        
@@ -20,17 +18,14 @@ class Normalize(nn.Module):
     def forward(self, batch):
         return (batch - self.mean).div_(self.std).permute(0, 3, 1, 2)
 
-
-def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std, dtype=float):
+def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std, dtype=torch.float):
     assert(batch.size(3) == 3)
     batch = batch.to(dtype=dtype).div_(255.)
 
     mean = torch.tensor(mean).type_as(batch)
-    std = torch.tensor(mean).type_as(batch)
+    std = torch.tensor(std).type_as(batch)
 
     return (batch - mean).div_(std).permute(0, 3, 1, 2)
-
-
 
 def un_normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std):
     assert(batch.size(1) == 3)
