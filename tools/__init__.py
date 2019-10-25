@@ -2,6 +2,7 @@ from collections import Counter
 from collections.abc import Mapping
 import torch
 from torch import Tensor
+import numpy as np
 
 from numbers import Number
 import math
@@ -397,6 +398,8 @@ def shape_info(x):
 
     if type(x) == torch.Tensor:
         return tuple([*x.size(), x.dtype, x.device])
+    if isinstance(x, np.ndarray):
+        return tuple([*x.size(), x.dtype])
     elif type(x) == list:
         return list(map(shape_info, x))
     elif type(x) == tuple:
@@ -409,7 +412,9 @@ def shape_info(x):
 def shape(x):
 
     if type(x) == torch.Tensor:
-        return tuple([*x.size()])
+        return tuple(x.shape)
+    if isinstance(x, np.ndarray):
+        return tuple(x.shape)
     elif type(x) == list:
         return list(map(shape, x))
     elif type(x) == tuple:
