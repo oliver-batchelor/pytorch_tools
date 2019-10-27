@@ -399,7 +399,7 @@ def shape_info(x):
     if type(x) == torch.Tensor:
         return tuple([*x.size(), x.dtype, x.device])
     if isinstance(x, np.ndarray):
-        return tuple([*x.size(), x.dtype])
+        return tuple([*x.shape, type(x), x.dtype])
     elif type(x) == list:
         return list(map(shape_info, x))
     elif type(x) == tuple:
@@ -427,10 +427,11 @@ def shape(x):
 
 
 def map_tensors(t, f, *args, **kwargs):
-
     def rec(x):
         if type(x) == torch.Tensor:
             return f(x, *args, **kwargs)
+        if isinstance(x, np.ndarray):
+            return f(torch.from_numpy(x), *args, **kwargs)
         elif type(x) == list:
             return list(map(rec, x))
         elif type(x) == tuple:
@@ -439,7 +440,7 @@ def map_tensors(t, f, *args, **kwargs):
             return x.__class__({k : rec(v) for k, v in x.items()})
         else:
             return x
-
+            
     return rec(t)
 
 def tensors_to(t, **kwargs):

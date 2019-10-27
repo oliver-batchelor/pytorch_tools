@@ -125,11 +125,10 @@ waitKey = cv2.waitKey
 
 def display(t, name="image"):
     cv2.namedWindow(name)
-
     imshow(t, name=name)
 
     while cv2.getWindowProperty(name, cv2.WND_PROP_VISIBLE) > 0:
-        keyCode = waitKey(10)
+        keyCode = waitKey(1)
         if keyCode >= 0:
             return keyCode
 

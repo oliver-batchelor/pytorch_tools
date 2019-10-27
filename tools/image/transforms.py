@@ -12,10 +12,12 @@ default_statistics = struct(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225
 class Normalize(nn.Module):
     def __init__(self, mean=default_statistics.mean, std=default_statistics.std, dtype=torch.float):
        super().__init__()
-       self.mean = mean
-       self.std = std        
+       self.mean = torch.tensor(mean, dtype=dtype)
+       self.std = torch.tensor(mean, dtype=dtype)
+
 
     def forward(self, batch):
+        batch = batch.type_as(self.mean)
         return (batch - self.mean).div_(self.std).permute(0, 3, 1, 2)
 
 def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std, dtype=torch.float):
