@@ -410,7 +410,6 @@ def shape_info(x):
         return x
 
 def shape(x):
-
     if type(x) == torch.Tensor:
         return tuple(x.shape)
     if isinstance(x, np.ndarray):
@@ -423,6 +422,27 @@ def shape(x):
         return {k : shape(v) for k, v in x.items()}
     else:
         return x
+
+
+
+def flatten(x, prefix = ''):
+    def add_prefix(k):
+        if prefix == '':
+            return str(k)
+        else:
+            return prefix + "." + str(k)
+
+    def flatten_iter(iter):
+        return [flatten(inner, add_prefix(i)) for i, inner in iter]
+
+    if type(x) == list:
+        return flatten_iter(enumerate(x))
+    elif type(x) == tuple:
+        return flatten_iter(enumerate(x))
+    elif isinstance(x, Mapping):
+        return flatten_iter(x.items())
+    else:
+        return [(prefix, x)]
 
 
 
