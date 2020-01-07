@@ -1,3 +1,6 @@
+from __future__ import annotations
+
+from typing import List
 from collections import Counter
 from collections.abc import Mapping
 import torch
@@ -47,6 +50,11 @@ class Struct(Mapping):
     def __init__(self, entries):
         assert type(entries) == dict
         self.__dict__.update(entries)
+
+    @staticmethod 
+    def build(**d):
+        return Struct(d)
+
 
     def __getitem__(self, index):
         return self.__dict__[index]
@@ -239,7 +247,7 @@ class ZipList():
 
 
 class Table(Struct):
-    def __init__(self, d):
+    def __init__(self, d:dict):
 
         assert len(d) > 0, "empty Table"
         t = next(iter(d.values()))
@@ -248,14 +256,21 @@ class Table(Struct):
             assert type(v) == torch.Tensor, "expected tensor, got " + type(t).__name__
             assert v.size(0) == t.size(0), "mismatched column sizes: " + str(shape(d))
 
-        super(Table, self).__init__(d)
+        super(Table, self).__init__(d) 
 
+    @staticmethod
+    def from_structs(structs : List[Struct]) -> Table:
+        struct_lists = transpose_structs(structs)
+        return Table(struct_lists._map(torch.stack).__dict__)
+   
+    @staticmethod 
+    def build(**d):
+        return Table(d)
 
-    def __getitem__(self, index):
-        return self.__dict__[index]
+    def __getitem__(self, index:int) -> torch.Tensor:
+        return self.__dict__[index]        
 
-
-    def _index_select(self, index):
+    def _index_select(self, index:torch.Tensor) -> Table:
         if type(index) is torch.Tensor:
             assert index.dtype == torch.int64 
             assert index.dim() == 1
@@ -265,6 +280,10 @@ class Table(Struct):
         elif type(index) is int:
             return Struct({k: v[index] for k, v in self.items()})
         assert False, "Table.index_select: unsupported index type" + type(index).__name__
+
+
+    def _index(self, index:int) -> torch.Tensor:
+        return self._index_select(torch.tensor([index], dtype=int))
 
         
     def _narrow(self, start, n):
