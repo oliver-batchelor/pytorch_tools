@@ -31,7 +31,7 @@ def backup_experiment(log_path, name):
         os.rename(output_path, dest_path)        
 
 def make_experiment(log_path, name, dry_run=False, load=False):
-    from tensorboard_logger import TensorboardLogger
+    from .tensorboard_logger import TensorboardLogger
 
     output_path = os.path.join(log_path, name)
 
