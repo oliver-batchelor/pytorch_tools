@@ -4,7 +4,7 @@ import time
 import os.path as path
 import os
 
-from tools import Histogram, struct, to_dicts, to_structs
+from . import Histogram, struct, to_dicts, to_structs
 
 import torch
 import json

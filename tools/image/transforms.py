@@ -27,7 +27,7 @@ def normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.
     mean = torch.tensor(mean).type_as(batch)
     std = torch.tensor(std).type_as(batch)
 
-    return (batch - mean).div_(std).permute(0, 3, 1, 2)
+    return batch.sub_(mean).div_(std).permute(0, 3, 1, 2)
 
 def un_normalize_batch(batch, mean=default_statistics.mean, std=default_statistics.std):
     assert(batch.size(1) == 3)
