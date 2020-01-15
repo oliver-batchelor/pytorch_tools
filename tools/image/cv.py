@@ -124,8 +124,8 @@ def imwrite(path, image):
 waitKey = cv2.waitKey
 
 def display(t, name="image", resizeable=True):
-    cv2.namedWindow(name)
-    imshow(t, name=name, flags=cv2.WINDOW_NORMAL if resizeable else cv2.WINDOW_AUTOSIZE)
+    cv2.namedWindow(name, flags=cv2.WINDOW_NORMAL if resizeable else cv2.WINDOW_AUTOSIZE)
+    imshow(t, name=name)
 
     while cv2.getWindowProperty(name, cv2.WND_PROP_VISIBLE) > 0:
         keyCode = waitKey(1)
