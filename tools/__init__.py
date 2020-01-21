@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import List
 from collections import Counter
 from collections.abc import Mapping
@@ -259,7 +257,7 @@ class Table(Struct):
         super(Table, self).__init__(d) 
 
     @staticmethod
-    def from_structs(structs : List[Struct]) -> Table:
+    def from_structs(structs : List[Struct]) -> 'Table':
         struct_lists = transpose_structs(structs)
         return Table(struct_lists._map(torch.stack).__dict__)
    
@@ -270,7 +268,7 @@ class Table(Struct):
     def __getitem__(self, index:int) -> torch.Tensor:
         return self.__dict__[index]        
 
-    def _index_select(self, index:torch.Tensor) -> Table:
+    def _index_select(self, index:torch.Tensor) -> 'Table':
         if type(index) is torch.Tensor:
             assert index.dtype == torch.int64 
             assert index.dim() == 1
@@ -589,7 +587,7 @@ def pprint_struct(s, indent=2, width=160):
 
 def pformat_struct(s, indent=2, width=160):
     pp = pprint.PrettyPrinter(indent=indent, width=width)
-    pp.pformat(s._to_dicts())
+    return pp.pformat(s._to_dicts())
 
 def sum_list(xs):
     assert len(xs) > 0
