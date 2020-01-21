@@ -587,6 +587,9 @@ def pprint_struct(s, indent=2, width=160):
     pp = pprint.PrettyPrinter(indent=indent, width=width)
     pp.pprint(s._to_dicts())
 
+def pformat_struct(s, indent=2, width=160):
+    pp = pprint.PrettyPrinter(indent=indent, width=width)
+    pp.pformat(s._to_dicts())
 
 def sum_list(xs):
     assert len(xs) > 0
