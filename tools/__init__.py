@@ -611,6 +611,17 @@ def transpose_dicts(d):
             r[j] = inner
     return r    
 
+def transpose_dict_lists(d):
+    n = max([len(v) for v in d.values()])
+    r = [{}] * n
+    
+    for k, v in d.items():
+        for j, u in enumerate(v):
+            r[j][k] = u
+    return r    
+
+
+
 def add_dict(d, k):
     d[k] = d[k] + 1 if k in d else 1
     return d
