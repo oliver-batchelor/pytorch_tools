@@ -13,7 +13,7 @@ class Normalize(nn.Module):
     def __init__(self, mean=default_statistics.mean, std=default_statistics.std, dtype=torch.float):
        super().__init__()
        self.mean = torch.tensor(mean, dtype=dtype)
-       self.std = torch.tensor(mean, dtype=dtype)
+       self.std = torch.tensor(std, dtype=dtype)
 
 
     def forward(self, batch):
